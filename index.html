@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>G1 Trainer</title>
+  <meta name="description" content="Bambini-Trainings-App des 1. FC Hochstadt – Trainingsvorschläge nach DFB-Vorgaben.">
+  <meta name="theme-color" content="#5b21b6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="G1 Trainer">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <img src="icons/icon.svg" alt="" class="brand-logo">
+        <div>
+          <div class="brand-club" id="brandClub">1. FC Hochstadt</div>
+          <div class="brand-sub">G1 Trainer · Bambini</div>
+        </div>
+      </div>
+    </header>
+
+    <nav class="tabs" id="tabs">
+      <a href="#training" data-tab="training"><span class="ti">📋</span><span>Training</span></a>
+      <a href="#kinder" data-tab="kinder"><span class="ti">👧</span><span>Kinder</span></a>
+      <a href="#uebungen" data-tab="uebungen"><span class="ti">⚽</span><span>Übungen</span></a>
+      <a href="#verlauf" data-tab="verlauf"><span class="ti">🗓️</span><span>Verlauf</span></a>
+      <a href="#mehr" data-tab="mehr"><span class="ti">⚙️</span><span>Mehr</span></a>
+    </nav>
+
+    <main id="view" class="view" tabindex="-1"></main>
+  </div>
+
+  <div id="modal" class="modal" hidden>
+    <div class="modal-backdrop" data-close></div>
+    <div class="modal-sheet" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close aria-label="Schließen">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="data/exercises-halle.js"></script>
+  <script src="data/exercises-draussen.js"></script>
+  <script src="js/animator.js"></script>
+  <script src="js/dfb-info.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/generator.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

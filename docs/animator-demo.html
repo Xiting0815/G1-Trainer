@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animator Demo</title>
+<style>
+  body { margin: 0; padding: 16px; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f1f5f9; color: #0f172a; }
+  h2 { font-size: 16px; margin: 20px 0 8px; }
+  .card { max-width: 560px; background: #fff; border-radius: 12px; padding: 10px; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .bar { display: flex; gap: 8px; margin-top: 8px; }
+  button { font: inherit; padding: 6px 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; }
+</style>
+</head>
+<body>
+<h2>Halle: Bank, Matte, Hütchen</h2>
+<div class="card"><div id="a1"></div>
+  <div class="bar"><button data-c="0" data-act="toggle">Play/Pause</button><button data-c="0" data-s="0.5">0.5×</button><button data-c="0" data-s="1">1×</button><button data-c="0" data-s="2">2×</button></div></div>
+
+<h2>Rasen: 2 Minitore, 4 Spieler, Torschuss</h2>
+<div class="card"><div id="a2"></div>
+  <div class="bar"><button data-c="1" data-act="toggle">Play/Pause</button><button data-c="1" data-s="0.5">0.5×</button><button data-c="1" data-s="1">1×</button><button data-c="1" data-s="2">2×</button></div></div>
+
+<script src="../js/animator.js"></script>
+<script>
+var halle = {
+  loop: 8, field: 'halle',
+  objects: [
+    { type: 'cone', x: 12, y: 14, color: 'orange' },
+    { type: 'cone', x: 12, y: 50, color: 'orange' },
+    { type: 'bench', x: 40, y: 14, w: 26, rot: 0 },
+    { type: 'mat', x: 78, y: 32, w: 14, h: 22 },
+    { type: 'box', x: 40, y: 50 },
+    { type: 'cone', x: 58, y: 44, color: 'yellow' },
+    { type: 'cone', x: 64, y: 50, color: 'blue' },
+    { type: 'cone', x: 58, y: 56, color: 'yellow' },
+    { type: 'hoop', x: 24, y: 32, color: 'green' },
+    { type: 'pole', x: 60, y: 22 },
+    { type: 'label', x: 12, y: 9, text: 'Start' },
+    { type: 'unknownThing', x: 1 }
+  ],
+  actors: [
+    { id: 'p1', kind: 'player', color: 'red', label: '1',
+      keys: [[0, 12, 18], [0.12, 26, 14], [0.32, 54, 14], [0.5, 78, 26], [0.6, 78, 38], [0.8, 58, 50], [1, 12, 18]] },
+    { id: 'p2', kind: 'player', color: 'blue', label: '2',
+      keys: [[0, 12, 46], [0.2, 24, 32], [0.45, 40, 46], [0.7, 64, 46], [1, 12, 46]] },
+    { id: 'p3', kind: 'player', color: 'yellow', label: '3',
+      keys: [[0, 6, 32], [0.5, 30, 32], [1, 6, 32]] },
+    { id: 'c', kind: 'coach', keys: [[0, 50, 32]] }
+  ]
+};
+
+var rasen = {
+  loop: 6, field: 'rasen',
+  objects: [
+    { type: 'goal', x: 95, y: 32, rot: 90 },
+    { type: 'goal', x: 5, y: 32, rot: -90 },
+    { type: 'cone', x: 30, y: 20, color: 'yellow' },
+    { type: 'cone', x: 30, y: 44, color: 'yellow' },
+    { type: 'line', x1: 70, y1: 4, x2: 70, y2: 60, dash: true },
+    { type: 'zone', x: 76, y: 18, w: 18, h: 28, color: 'red' }
+  ],
+  actors: [
+    { id: 'r1', kind: 'player', color: 'red', label: 'A',
+      keys: [[0, 30, 32], [0.25, 46, 26], [0.5, 46, 26], [1, 30, 32]] },
+    { id: 'r2', kind: 'player', color: 'red', label: 'B',
+      keys: [[0, 50, 46], [0.3, 64, 40], [0.55, 74, 36], [0.75, 70, 40], [1, 50, 46]] },
+    { id: 'b1', kind: 'player', color: 'blue',
+      keys: [[0, 62, 22], [0.4, 66, 28], [0.7, 72, 30], [1, 62, 22]] },
+    { id: 'b2', kind: 'player', color: 'blue',
+      keys: [[0, 88, 32], [0.55, 88, 30], [0.65, 89, 35], [1, 88, 32]] },
+    { id: 'ball', kind: 'ball',
+      keys: [[0, 32.5, 32], [0.25, 48.5, 26.5], [0.32, 50, 33], [0.42, 64, 40.5], [0.55, 76.5, 36], [0.68, 96, 33], [0.9, 96, 33], [1, 32.5, 32]] },
+    { id: 'c', kind: 'coach', keys: [[0, 50, 60]] }
+  ]
+};
+
+var ctrls = [
+  Animator.create(document.getElementById('a1'), halle, { autoplay: true, speed: 1 }),
+  Animator.create(document.getElementById('a2'), rasen, { autoplay: true })
+];
+// Robustheit
+Animator.create(document.createElement('div'), {}, { autoplay: false }).destroy();
+Animator.create(document.createElement('div'), null).destroy();
+
+document.addEventListener('click', function (e) {
+  var b = e.target.closest('button'); if (!b) return;
+  var c = ctrls[+b.dataset.c];
+  if (b.dataset.act === 'toggle') c.toggle(); else c.setSpeed(+b.dataset.s);
+});
+</script>
+</body>
+</html>
