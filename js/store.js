@@ -29,9 +29,11 @@
         team: 'G-Jugend (Bambini)',
         material: MATERIAL.map((m) => m.key),
         sound: true,
+        trainingDay: 3,
       },
       kids: [],
       sessions: [],
+      planned: [],
       favorites: [],
       draft: null,
     };
@@ -80,7 +82,7 @@
   function exportKidsJSON() {
     return JSON.stringify({
       type: KIDS_TYPE, version: 1, exportedAt: new Date().toISOString(),
-      kids: state.kids.map((k) => ({ name: k.name, birthdate: k.birthdate || '', age: k.age || null, ratings: k.ratings, note: k.note || '', active: k.active !== false })),
+      kids: state.kids.map((k) => ({ name: k.name, birthdate: k.birthdate || '', year: k.year || null, eligible: k.eligible !== false, age: k.age || null, ratings: k.ratings, note: k.note || '', active: k.active !== false })),
     }, null, 2);
   }
 
@@ -97,12 +99,15 @@
       const ratings = Object.assign({ ballgefuehl: 3, koordination: 3, laufen: 3, sozial: 3 }, src.ratings || {});
       if (ex) {
         if (src.birthdate) ex.birthdate = src.birthdate;
+        if (src.year) ex.year = src.year;
+        if (typeof src.eligible === 'boolean') ex.eligible = src.eligible;
         if (src.ratings) ex.ratings = ratings;
         if (src.note) ex.note = src.note;
         updated++;
       } else {
         state.kids.push({
-          id: uid(), name: String(src.name).trim(), birthdate: src.birthdate || '', age: src.age || null,
+          id: uid(), name: String(src.name).trim(), birthdate: src.birthdate || '', year: src.year || null,
+          eligible: typeof src.eligible === 'boolean' ? src.eligible : true, age: src.age || null,
           ratings, note: src.note || '', active: src.active !== false,
         });
         added++;
