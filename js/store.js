@@ -74,8 +74,47 @@
     return JSON.stringify(Object.assign({ exportedAt: new Date().toISOString() }, state), null, 2);
   }
 
+  // Reine Kinderliste (z. B. vom 2. Trainer): ergänzt bzw. aktualisiert Kinder, alles andere bleibt.
+  const KIDS_TYPE = 'g1-kinderliste';
+
+  function exportKidsJSON() {
+    return JSON.stringify({
+      type: KIDS_TYPE, version: 1, exportedAt: new Date().toISOString(),
+      kids: state.kids.map((k) => ({ name: k.name, birthdate: k.birthdate || '', age: k.age || null, ratings: k.ratings, note: k.note || '', active: k.active !== false })),
+    }, null, 2);
+  }
+
+  function isKidsFile(data) {
+    return data && data.type === KIDS_TYPE && Array.isArray(data.kids);
+  }
+
+  function mergeKids(data) {
+    const norm = (n) => String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    let added = 0, updated = 0;
+    data.kids.forEach((src) => {
+      if (!src || !src.name) return;
+      const ex = state.kids.find((k) => norm(k.name) === norm(src.name));
+      const ratings = Object.assign({ ballgefuehl: 3, koordination: 3, laufen: 3, sozial: 3 }, src.ratings || {});
+      if (ex) {
+        if (src.birthdate) ex.birthdate = src.birthdate;
+        if (src.ratings) ex.ratings = ratings;
+        if (src.note) ex.note = src.note;
+        updated++;
+      } else {
+        state.kids.push({
+          id: uid(), name: String(src.name).trim(), birthdate: src.birthdate || '', age: src.age || null,
+          ratings, note: src.note || '', active: src.active !== false,
+        });
+        added++;
+      }
+    });
+    save();
+    return { added, updated };
+  }
+
   function importJSON(text) {
     const data = JSON.parse(text);
+    if (isKidsFile(data)) return mergeKids(data);
     if (!data || !Array.isArray(data.kids) || !Array.isArray(data.sessions)) {
       throw new Error('Datei ist kein G1-Trainer-Export.');
     }
@@ -95,7 +134,7 @@
 
   window.Store = {
     KEY, AREAS, MATERIAL,
-    load, save, uid, exportJSON, importJSON, reset,
+    load, save, uid, exportJSON, exportKidsJSON, importJSON, isKidsFile, reset,
     get state() { return state; },
   };
 })();

@@ -28,6 +28,7 @@
     exPhase: 'alle',
     exFav: false,
     exSearch: '',
+    kidYear: 'alle',
   };
 
   let viewCtrls = [];
@@ -74,6 +75,20 @@
     for (let i = 1; i <= 5; i++) s += `<button type="button" data-star="${i}" class="${i <= v ? 'on' : ''}" aria-label="${i} Sterne">★</button>`;
     return s + '</span>';
   }
+
+  function ageOf(k) {
+    if (k.birthdate) {
+      const b = new Date(k.birthdate + 'T00:00:00'), n = new Date();
+      if (isNaN(b)) return k.age || null;
+      let a = n.getFullYear() - b.getFullYear();
+      const m = n.getMonth() - b.getMonth();
+      if (m < 0 || (m === 0 && n.getDate() < b.getDate())) a--;
+      return a;
+    }
+    return k.age || null;
+  }
+  const yearOf = (k) => (k.birthdate ? +k.birthdate.slice(0, 4) : null);
+  const yearsOf = (kids) => [...new Set(kids.map(yearOf).filter(Boolean))].sort();
 
   function kidAvg(kid) {
     const vals = AREAS.map((a) => (kid.ratings && kid.ratings[a.key]) || 3);
@@ -174,7 +189,7 @@
 
     const attendHtml = kids.length
       ? `<div class="row" style="margin-bottom:8px"><b>${present.length} von ${kids.length} da</b><span class="spacer"></span>
-           <button class="btn btn-sm btn-ghost" data-act="att-all">Alle</button><button class="btn btn-sm btn-ghost" data-act="att-none">Keine</button></div>
+           <button class="btn btn-sm btn-ghost" data-act="att-all">Alle</button>${yearsOf(kids).map((y) => `<button class="btn btn-sm btn-ghost" data-att-year="${y}">Jg. ${y}</button>`).join('')}<button class="btn btn-sm btn-ghost" data-act="att-none">Keine</button></div>
          <div class="attend">${kids.map((k) => `
            <label class="${ui.attend.has(k.id) ? '' : 'off'}"><input type="checkbox" data-att="${k.id}" ${ui.attend.has(k.id) ? 'checked' : ''}>
            <span>${esc(k.name)}</span></label>`).join('')}</div>`
@@ -303,22 +318,33 @@
   }
 
   function renderKinder() {
-    const kids = activeKids();
+    const allKids = activeKids();
+    const years = yearsOf(allKids);
+    if (ui.kidYear !== 'alle' && !years.includes(+ui.kidYear)) ui.kidYear = 'alle';
+    const kids = ui.kidYear === 'alle' ? allKids : allKids.filter((k) => yearOf(k) === +ui.kidYear);
     const inactive = state.kids.filter((k) => k.active === false);
     const avg = Generator.avgRatings(kids);
     const overview = kids.length ? `
       <div class="card">
-        <div class="card-head"><h3 style="margin:0">Mannschaft im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></div>
+        <div class="card-head"><h3 style="margin:0">${ui.kidYear === 'alle' ? 'Mannschaft' : 'Jahrgang ' + ui.kidYear} im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></div>
         ${AREAS.map((a) => `<div class="area-row"><span>${a.icon} ${a.label}</span><div class="bar"><i style="width:${(avg[a.key] / 5) * 100}%"></i></div><b>${avg[a.key].toFixed(1)}</b></div>`).join('')}
         <p class="small muted" style="margin:8px 0 0">Größtes Potenzial: <b>${AREAS.find((a) => a.key === Generator.weakestArea(avg)).label}</b> – darauf legt der automatische Vorschlag den Schwerpunkt.</p>
       </div>` : '';
 
-    const list = kids.map((k) => kidRow(k)).join('');
+    const groups = [];
+    yearsOf(kids).forEach((y) => groups.push([`Jahrgang ${y}`, kids.filter((k) => yearOf(k) === y)]));
+    const noYear = kids.filter((k) => !yearOf(k));
+    if (noYear.length) groups.push([groups.length ? 'Ohne Geburtsdatum' : '', noYear]);
+    const list = groups.map(([title, ks]) => `${title ? `<h3 style="margin:18px 0 10px">${title} <span class="muted" style="font-weight:500">(${ks.length})</span></h3>` : ''}<div class="grid grid-2">${ks.map((k) => kidRow(k)).join('')}</div>`).join('');
+    const yearChips = years.length > 1 ? `<div class="chips" style="margin-bottom:12px">
+        <button class="chip ${ui.kidYear === 'alle' ? 'on' : ''}" data-kid-year="alle">Alle (${allKids.length})</button>
+        ${years.map((y) => `<button class="chip ${+ui.kidYear === y ? 'on' : ''}" data-kid-year="${y}">Jahrgang ${y}</button>`).join('')}</div>` : '';
     return `
-      <div class="row" style="margin-bottom:12px"><h1 style="margin:0">Kinder <span class="muted" style="font-weight:500">(${kids.length})</span></h1><span class="spacer"></span>
+      <div class="row" style="margin-bottom:12px"><h1 style="margin:0">Kinder <span class="muted" style="font-weight:500">(${allKids.length})</span></h1><span class="spacer"></span>
         <button class="btn btn-primary" data-act="kid-new">＋ Kind</button></div>
+      ${yearChips}
       ${overview}
-      ${kids.length ? `<div class="grid grid-2">${list}</div>` : `<div class="card empty"><div class="big">👧🧒</div><p>Noch keine Kinder eingetragen.</p><button class="btn btn-primary" data-act="kid-new">Erstes Kind anlegen</button></div>`}
+      ${kids.length ? list : `<div class="card empty"><div class="big">👧🧒</div><p>Noch keine Kinder eingetragen.</p><button class="btn btn-primary" data-act="kid-new">Erstes Kind anlegen</button></div>`}
       ${inactive.length ? `<h3 style="margin-top:20px">Inaktiv (${inactive.length})</h3><div class="grid grid-2">${inactive.map((k) => kidRow(k)).join('')}</div>` : ''}
     `;
   }
@@ -327,7 +353,8 @@
     return `<div class="kid" data-kid="${k.id}" style="${k.active === false ? 'opacity:.6' : ''}">
       <div class="avatar" style="background:${avatarColor(k.name)}">${esc(initials(k.name))}</div>
       <div class="kid-main">
-        <div class="kid-name">${esc(k.name)} <span class="muted small">· ${k.age ? k.age + ' J.' : '–'}</span></div>
+        <div class="kid-name">${esc(k.name)}</div>
+        <div class="muted small">${ageOf(k) ? ageOf(k) + ' Jahre' : 'Alter –'}${yearOf(k) ? ' · Jg. ' + yearOf(k) : ''}</div>
         <div class="kid-areas">${AREAS.map((a) => `<span>${a.icon} ${(k.ratings && k.ratings[a.key]) || 3}</span>`).join('')}</div>
       </div>
       <div style="text-align:right">${starsRO(kidAvg(k))}<div class="small muted">${attendanceCount(k.id)}× da</div></div>
@@ -337,15 +364,15 @@
   function openKid(id) {
     const isNew = !id;
     const k = isNew
-      ? { id: Store.uid(), name: '', age: 5, ratings: { ballgefuehl: 3, koordination: 3, laufen: 3, sozial: 3 }, note: '', active: true }
+      ? { id: Store.uid(), name: '', birthdate: '', ratings: { ballgefuehl: 3, koordination: 3, laufen: 3, sozial: 3 }, note: '', active: true }
       : JSON.parse(JSON.stringify(kidById(id)));
-    const ages = [3, 4, 5, 6, 7, 8];
     openModal(`
       <h2>${isNew ? 'Neues Kind' : esc(k.name)}</h2>
       <form id="kidForm">
         <div class="grid grid-2">
           <div class="field"><label for="kName">Name</label><input class="input" id="kName" required value="${esc(k.name)}" placeholder="Vorname (Nachname)" autocomplete="off"></div>
-          <div class="field"><label for="kAge">Alter</label><select class="input" id="kAge">${ages.map((a) => `<option value="${a}" ${+k.age === a ? 'selected' : ''}>${a} Jahre</option>`).join('')}</select></div>
+          <div class="field"><label for="kBirth">Geburtsdatum</label><input class="input" id="kBirth" type="date" value="${esc(k.birthdate || '')}" max="${new Date().toISOString().slice(0, 10)}">
+            <span class="small muted" id="kAgeInfo"></span></div>
         </div>
         <h3 style="margin-top:6px">Aktuelle Leistung</h3>
         <p class="small muted">1 = fängt gerade an · 3 = altersgerecht · 5 = schon sehr sicher</p>
@@ -369,6 +396,13 @@
         k.ratings[st.dataset.area] = v;
         st.querySelectorAll('button').forEach((x) => x.classList.toggle('on', +x.dataset.star <= v));
       }));
+      const birth = root.querySelector('#kBirth'), info = root.querySelector('#kAgeInfo');
+      const updAge = () => {
+        const tmp = { birthdate: birth.value, age: k.age };
+        const a = ageOf(tmp);
+        info.textContent = birth.value ? `${a} Jahre · Jahrgang ${birth.value.slice(0, 4)}` : (k.age ? `bisher eingetragen: ${k.age} Jahre` : '');
+      };
+      birth.addEventListener('change', updAge); updAge();
       if (isNew) setTimeout(() => root.querySelector('#kName').focus(), 100);
       const del = root.querySelector('#kDel');
       if (del) del.addEventListener('click', () => {
@@ -380,7 +414,7 @@
         e.preventDefault();
         k.name = root.querySelector('#kName').value.trim();
         if (!k.name) return;
-        k.age = +root.querySelector('#kAge').value;
+        k.birthdate = birth.value || '';
         k.note = root.querySelector('#kNote').value.trim();
         const act = root.querySelector('#kActive');
         if (act) k.active = act.checked;
@@ -609,9 +643,10 @@
       </div>
       <div class="card">
         <h3>💾 Daten</h3>
-        <p class="small muted">Alle Daten liegen nur auf diesem Gerät. Zum Übertragen aufs Tablet (oder als Sicherung) exportieren und dort importieren.</p>
+        <p class="small muted">Alle Daten liegen nur auf diesem Gerät. <b>Alles exportieren</b> = komplette Sicherung (Import ersetzt alles). <b>Nur Kinderliste</b> = zum Teilen mit dem 2. Trainer (Import ergänzt/aktualisiert nur die Kinder).</p>
         <div class="row">
-          <button class="btn" data-act="export">⬇️ Exportieren</button>
+          <button class="btn" data-act="export">⬇️ Alles exportieren</button>
+          <button class="btn" data-act="export-kids">👧 Nur Kinderliste</button>
           <label class="btn">⬆️ Importieren<input type="file" id="importFile" accept="application/json,.json" hidden></label>
           <span class="spacer"></span>
           <button class="btn btn-danger" data-act="reset">Alles löschen</button>
@@ -812,6 +847,12 @@
     const exB = t.closest('[data-ex]');
     if (exB) { openExercise(exB.dataset.ex); return; }
 
+    const ky = t.closest('[data-kid-year]');
+    if (ky) { ui.kidYear = ky.dataset.kidYear; rerender(); return; }
+
+    const ay = t.closest('[data-att-year]');
+    if (ay) { ui.attend = new Set(activeKids().filter((k) => yearOf(k) === +ay.dataset.attYear).map((k) => k.id)); rerender(); return; }
+
     const kid = t.closest('[data-kid]');
     if (kid) { openKid(kid.dataset.kid); return; }
 
@@ -851,6 +892,7 @@
       case 'finish': finishPlan(); break;
       case 'kid-new': openKid(null); break;
       case 'ex-fav': ui.exFav = !ui.exFav; act.classList.toggle('on', ui.exFav); refreshExList(); break;
+      case 'export-kids': download(`g1-kinderliste-${new Date().toISOString().slice(0, 10)}.json`, Store.exportKidsJSON()); toast('Kinderliste exportiert'); break;
       case 'export': download(`g1-trainer-${new Date().toISOString().slice(0, 10)}.json`, Store.exportJSON()); toast('Export erstellt'); break;
       case 'reset':
         if (confirm('Wirklich ALLE Daten (Kinder, Verlauf, Favoriten) löschen?') && confirm('Sicher? Das kann nicht rückgängig gemacht werden.')) {
@@ -874,7 +916,16 @@
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          if (!confirm('Import ersetzt alle aktuellen Daten auf diesem Gerät. Fortfahren?')) return;
+          const data = JSON.parse(reader.result);
+          if (Store.isKidsFile(data)) {
+            if (!confirm(`Kinderliste mit ${data.kids.length} Kindern importieren? Neue Kinder werden hinzugefügt, vorhandene (gleicher Name) aktualisiert.`)) return;
+            const r = Store.importJSON(reader.result);
+            ui.attend = null;
+            alert(`Fertig: ${r.added} Kinder hinzugefügt, ${r.updated} aktualisiert.`);
+            location.hash = '#kinder'; route();
+            return;
+          }
+          if (!confirm('Diese Datei ist eine komplette Sicherung und ersetzt ALLE Daten auf diesem Gerät. Fortfahren?')) return;
           Store.importJSON(reader.result);
           location.reload();
         } catch (err) { alert('Import fehlgeschlagen: ' + err.message); }
