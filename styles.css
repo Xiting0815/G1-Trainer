@@ -394,3 +394,6 @@ td.st-1 { background: var(--st-1); } td.st-2 { background: var(--st-2); } td.st-
 .rules-card li { margin-bottom: 4px; font-weight: 600; }
 @media (prefers-color-scheme: dark) { .rules-card { background: #052e22; color: #a7f3d0; } }
 .timer .rules-card { background: #ecfdf5; color: #064e3b; font-size: 1.05rem; }
+
+.awake-badge { display: inline-block; margin: 8px 0 0; border: 0; border-radius: 99px; padding: 4px 10px; font-size: .78rem; font-weight: 700; background: #ecfdf5; color: #047857; cursor: pointer; }
+.awake-badge.off { background: #fef3c7; color: #92400e; }

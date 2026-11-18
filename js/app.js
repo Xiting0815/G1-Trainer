@@ -1275,10 +1275,17 @@
     requestWake();
   }
 
-  async function requestWake() {
-    try { if (navigator.wakeLock && timer) timer.wake = await navigator.wakeLock.request('screen'); } catch (e) { /* nicht unterstützt */ }
+  function updateAwake(on) {
+    const b = document.getElementById('tAwake');
+    if (!b) return;
+    b.textContent = on ? '🔆 Display bleibt an' : '⚠️ Display kann ausgehen – antippen';
+    b.classList.toggle('off', !on);
   }
-  document.addEventListener('visibilitychange', () => { if (timer && document.visibilityState === 'visible') requestWake(); });
+  function requestWake() {
+    if (!window.KeepAwake) return;
+    KeepAwake.onChange(updateAwake);
+    KeepAwake.enable().then(updateAwake);
+  }
 
   function fmtClock(sec) {
     const neg = sec < 0; sec = Math.abs(Math.round(sec));
@@ -1381,6 +1388,7 @@
         <div class="timer-progress">${plan.blocks.map((x, i) => `<i class="tl-${blockPh(x).cls} ${i < timer.idx ? 'done' : i === timer.idx ? 'now' : ''}" style="--min:${x.minutes}"></i>`).join('')}</div>
         <span class="small muted" style="white-space:nowrap">${elapsed}/${total}′</span>
       </div>
+      <button class="awake-badge" id="tAwake" type="button"></button>
       <div class="timer-main">
         <div>
           <span class="timer-type">${typeLabel}</span>
@@ -1406,10 +1414,13 @@
       </div>`;
     mountAnims(el, timer.ctrls);
     updateClock();
+    updateAwake(window.KeepAwake ? KeepAwake.status() : false);
+    el.querySelector('#tAwake').onclick = () => requestWake();
     el.querySelector('#tClose').onclick = () => { if (confirm('Timer beenden?')) closeTimer(); };
     el.querySelector('#tPlay').onclick = () => {
       if (timer.audio && timer.audio.state === 'suspended') timer.audio.resume();
       timer.running = !timer.running; timer.last = performance.now();
+      if (window.KeepAwake && !KeepAwake.status()) requestWake();
       el.querySelector('#tPlay').textContent = timer.running ? '⏸ Pause' : '▶ Start';
       el.classList.toggle('paused', !timer.running);
     };
@@ -1456,7 +1467,7 @@
     if (!timer) return;
     clearInterval(timer.int);
     destroyAll(timer.ctrls);
-    try { timer.wake && timer.wake.release(); } catch (e) { /* */ }
+    try { window.KeepAwake && KeepAwake.disable(); } catch (e) { /* */ }
     try { timer.audio && timer.audio.close(); } catch (e) { /* */ }
     timer = null;
     const el = document.getElementById('timer');
