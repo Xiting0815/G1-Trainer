@@ -8,6 +8,8 @@ window.EXERCISES.push(
   {
     id: 'h-ballzauberer',
     name: 'Ballzauberer',
+    short: 'Alle dribbeln, auf Zauberspruch Ball einfrieren oder Trick zeigen.',
+    materialQty: { baelle: '1/Kind', huetchen: '4' },
     venue: ['halle'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination'],
@@ -51,6 +53,8 @@ window.EXERCISES.push(
   {
     id: 'h-feuer-wasser-blitz',
     name: 'Feuer, Wasser, Blitz',
+    short: 'Alle laufen frei, auf Zuruf zu Matte, Bank oder flach hinlegen.',
+    materialQty: { baenke: '2', matten: '2' },
     venue: ['halle'],
     phase: 'aufwaermen',
     focus: ['laufen', 'koordination'],
@@ -89,6 +93,8 @@ window.EXERCISES.push(
   {
     id: 'h-haifischbecken',
     name: 'Haifischbecken',
+    short: 'Fische wechseln die Matten-Inseln, der Hai fängt im Wasser.',
+    materialQty: { matten: '5', leibchen: '2' },
     venue: ['halle'],
     phase: 'aufwaermen',
     focus: ['laufen', 'sozial'],
@@ -126,6 +132,8 @@ window.EXERCISES.push(
   {
     id: 'h-farben-tankstelle',
     name: 'Farben-Tankstelle',
+    short: 'Alle dribbeln, auf Farbruf schnell zur passenden Ecke tanken.',
+    materialQty: { baelle: '1/Kind', huetchen: '12' },
     venue: ['halle', 'draussen'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'laufen'],
@@ -176,6 +184,8 @@ window.EXERCISES.push(
   {
     id: 'h-fuchsschwanz-jagd',
     name: 'Fuchsschwanz-Jagd',
+    short: 'Füchse dribbeln mit Leibchen-Schwanz, zwei Jäger klauen ihn.',
+    materialQty: { baelle: '1/Kind', leibchen: '1/Kind', huetchen: '4' },
     venue: ['halle', 'draussen'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'laufen', 'sozial'],
@@ -219,6 +229,8 @@ window.EXERCISES.push(
   {
     id: 'h-linien-stadt',
     name: 'Busfahrer in der Linienstadt',
+    short: 'Alle dribbeln wie Busse auf den Hallenlinien, an Ampeln stoppen.',
+    materialQty: { baelle: '1/Kind', huetchen: '5' },
     venue: ['halle'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination'],
@@ -267,6 +279,8 @@ window.EXERCISES.push(
   {
     id: 'h-garage-einparken',
     name: 'Ab in die Garage',
+    short: 'Alle dribbeln, auf „Feierabend!“ Ball im Reifen parken.',
+    materialQty: { baelle: '1/Kind', reifen: '8' },
     venue: ['halle'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl'],
@@ -313,6 +327,8 @@ window.EXERCISES.push(
   {
     id: 'h-wand-pingpong',
     name: 'Pingpong mit der Wand',
+    short: 'Jedes Kind passt gegen die Wand und stoppt mit der Sohle.',
+    materialQty: { baelle: '1/Kind', huetchen: '1/Kind' },
     venue: ['halle'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination'],
@@ -355,6 +371,8 @@ window.EXERCISES.push(
   {
     id: 'h-dschungel-expedition',
     name: 'Dschungel-Expedition',
+    short: 'Kinder turnen über Bank, Matte, Kasten, Reifen und Slalom.',
+    materialQty: { baenke: '1', matten: '1', kaesten: '1', reifen: '4', huetchen: '4' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['koordination', 'laufen'],
@@ -399,6 +417,8 @@ window.EXERCISES.push(
   {
     id: 'h-ball-abenteuerpfad',
     name: 'Ball-Abenteuerpfad',
+    short: 'Mit Ball durch Slalom, Banktunnel und Reifen, dann ins Minitor.',
+    materialQty: { baelle: '1/Kind', stangen: '4', baenke: '1', kaesten: '2', reifen: '1', minitore: '1', huetchen: '1' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'koordination', 'torschuss'],
@@ -443,6 +463,8 @@ window.EXERCISES.push(
   {
     id: 'h-flipper-bande',
     name: 'Flipperautomat',
+    short: 'Paare spielen den Ball über die gekippte Bank zum Partner.',
+    materialQty: { baelle: '1/Paar', baenke: '2', huetchen: '4' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'sozial'],
@@ -492,6 +514,8 @@ window.EXERCISES.push(
   {
     id: 'h-kegelbahn',
     name: 'Kegelbahn',
+    short: 'Alle schießen von der Linie auf Hütchen-Kegel vor der Bank.',
+    materialQty: { baelle: '1/Kind', huetchen: '8', baenke: '1' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['torschuss', 'ballgefuehl'],
@@ -540,6 +564,8 @@ window.EXERCISES.push(
   {
     id: 'h-zirkus-bambini',
     name: 'Zirkus Bambini',
+    short: 'Zirkus-Stationen: balancieren, rollen, Balltricks, Reifen-Manege.',
+    materialQty: { baenke: '1', matten: '2', huetchen: '4', baelle: '1/Kind', reifen: '4' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['koordination', 'ballgefuehl'],
@@ -596,6 +622,8 @@ window.EXERCISES.push(
   {
     id: 'h-schatzkisten-tore',
     name: 'Schatzkisten-Jagd',
+    short: 'Alle dribbeln frei, dann von der Linie in ein Minitor schießen.',
+    materialQty: { baelle: '1/Kind', minitore: '4', huetchen: '8' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['torschuss', 'ballgefuehl'],
@@ -641,6 +669,8 @@ window.EXERCISES.push(
   {
     id: 'h-trollbruecke',
     name: 'Die Trollbrücke',
+    short: 'Alle dribbeln übers Feld, der Troll klaut Bälle auf der Brücke.',
+    materialQty: { baelle: '1/Kind', huetchen: '4', leibchen: '1' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'sozial'],
@@ -685,6 +715,8 @@ window.EXERCISES.push(
   {
     id: 'h-tore-express',
     name: 'Bahnhof-Express',
+    short: 'Paare passen sich durch Hütchentore, dann zum nächsten Tor.',
+    materialQty: { baelle: '1/Paar', huetchen: '8' },
     venue: ['halle', 'draussen'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'sozial'],
@@ -734,6 +766,8 @@ window.EXERCISES.push(
   {
     id: 'h-schatzraeuber',
     name: 'Schatzräuber',
+    short: 'Teams klauen Bälle aus fremden Höhlen und dribbeln sie heim.',
+    materialQty: { baelle: '12', huetchen: '16', leibchen: '1/Kind' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'laufen', 'sozial'],
@@ -776,6 +810,8 @@ window.EXERCISES.push(
   {
     id: 'h-koenig-der-halle',
     name: 'König der Halle',
+    short: 'Alle schützen ihren Ball und spielen andere Bälle aus dem Feld.',
+    materialQty: { baelle: '1/Kind', huetchen: '4' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'sozial'],
@@ -819,6 +855,8 @@ window.EXERCISES.push(
   {
     id: 'h-ritterduell',
     name: 'Ritterduell',
+    short: '1 gegen 1 auf zwei Minitore, nach dem Tor sofort neu angreifen.',
+    materialQty: { baelle: '6', minitore: '2', huetchen: '4', leibchen: '2' },
     venue: ['halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'torschuss', 'sozial'],
@@ -857,6 +895,8 @@ window.EXERCISES.push(
   {
     id: 'h-funino-burgen',
     name: 'Funino – Vier-Burgen-Spiel',
+    short: '3 gegen 3 auf je zwei Minitore, Tore nur aus der Schusszone.',
+    materialQty: { minitore: '4', baelle: '4', leibchen: '3', huetchen: '6' },
     venue: ['halle', 'draussen'],
     phase: 'abschluss',
     focus: ['sozial', 'torschuss', 'ballgefuehl'],
@@ -898,6 +938,8 @@ window.EXERCISES.push(
   {
     id: 'h-champions-league',
     name: 'Hallen-Champions-League',
+    short: '2 gegen 2 auf Minitore, Sieger wechseln das Feld.',
+    materialQty: { minitore: '2', baelle: '3', leibchen: '2', huetchen: '4' },
     venue: ['halle'],
     phase: 'abschluss',
     focus: ['sozial', 'torschuss'],
@@ -945,6 +987,8 @@ window.EXERCISES.push(
   {
     id: 'h-bankmauer-bumm',
     name: 'Burgmauer-Bumm',
+    short: '3 gegen 3, Punkt für jeden Treffer an die gegnerische Bank.',
+    materialQty: { baenke: '2', baelle: '2', leibchen: '3' },
     venue: ['halle'],
     phase: 'abschluss',
     focus: ['sozial', 'torschuss'],
@@ -982,6 +1026,8 @@ window.EXERCISES.push(
   {
     id: 'h-fliegender-teppich',
     name: 'Fliegender Teppich',
+    short: 'Teams dribbeln den Ball auf eine gegnerische Matte und stoppen.',
+    materialQty: { matten: '4', baelle: '2', leibchen: '3' },
     venue: ['halle'],
     phase: 'abschluss',
     focus: ['ballgefuehl', 'sozial'],
@@ -1018,6 +1064,8 @@ window.EXERCISES.push(
   {
     id: 'h-riese-rumpelbumm',
     name: 'Riese Rumpelbumm',
+    short: 'Alle dribbeln zum Schloss und schießen, der Riese hält.',
+    materialQty: { minitore: '3', baelle: '1/Kind', huetchen: '5' },
     venue: ['halle'],
     phase: 'abschluss',
     focus: ['torschuss', 'sozial'],
@@ -1067,6 +1115,8 @@ window.EXERCISES.push(
   {
     id: 'h-joker-laenderspiel',
     name: 'Joker-Länderspiel',
+    short: '3 gegen 3 auf Minitore, der Joker spielt immer mit dem Ballteam.',
+    materialQty: { minitore: '2', baelle: '3', leibchen: '4', huetchen: '4' },
     venue: ['halle', 'draussen'],
     phase: 'abschluss',
     focus: ['sozial', 'torschuss', 'ballgefuehl'],

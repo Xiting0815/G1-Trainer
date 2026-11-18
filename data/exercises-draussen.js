@@ -11,6 +11,8 @@ window.EXERCISES.push(
   {
     id: 'd-ampel-dribbling',
     name: 'Ampel-Dribbling',
+    short: 'Alle dribbeln, Trainer zeigt Ampelfarbe: schnell, langsam, Stopp.',
+    materialQty: { huetchen: '7', baelle: '1/Kind' },
     venue: ['draussen', 'halle'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination'],
@@ -64,6 +66,8 @@ window.EXERCISES.push(
   {
     id: 'd-farbhuetchen-zauber',
     name: 'Zauberer und Farbhütchen',
+    short: 'Alle dribbeln, auf Farbruf um ein Hütchen dieser Farbe.',
+    materialQty: { huetchen: '12', baelle: '1/Kind' },
     venue: ['draussen'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination'],
@@ -121,6 +125,8 @@ window.EXERCISES.push(
   {
     id: 'd-tunnel-fangen',
     name: 'Tunnelfangen',
+    short: 'Fänger schlagen ab, Gefangene werden durch den Tunnel befreit.',
+    materialQty: { huetchen: '4', leibchen: '2' },
     venue: ['draussen', 'halle'],
     phase: 'aufwaermen',
     focus: ['laufen', 'sozial'],
@@ -167,6 +173,8 @@ window.EXERCISES.push(
   {
     id: 'd-autofahrt-stadt',
     name: 'Autofahrt durch die Stadt',
+    short: 'Alle dribbeln auf der Hütchenstraße, Tempo nach Zuruf.',
+    materialQty: { huetchen: '14', baelle: '1/Kind' },
     venue: ['draussen'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'laufen'],
@@ -227,6 +235,8 @@ window.EXERCISES.push(
   {
     id: 'd-huetchentore-sammeln',
     name: 'Tore sammeln',
+    short: 'Alle dribbeln durch möglichst viele Hütchentore und zählen.',
+    materialQty: { huetchen: '16', baelle: '1/Kind' },
     venue: ['draussen'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination'],
@@ -277,6 +287,8 @@ window.EXERCISES.push(
   {
     id: 'd-garagen-spiel',
     name: 'Ab in die Garage',
+    short: 'Alle dribbeln, auf „Garage!“ Ball im Reifen stoppen.',
+    materialQty: { reifen: '6', baelle: '1/Kind', huetchen: '4' },
     venue: ['draussen', 'halle'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination'],
@@ -331,6 +343,8 @@ window.EXERCISES.push(
   {
     id: 'd-slalom-staffel',
     name: 'Skifahrer-Slalom',
+    short: 'Slalom um Stangen dribbeln, im Tempo zurück, abklatschen.',
+    materialQty: { stangen: '4/Bahn', huetchen: '2/Bahn', baelle: '1/Kind' },
     venue: ['draussen'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'koordination', 'laufen'],
@@ -380,6 +394,8 @@ window.EXERCISES.push(
   {
     id: 'd-baelle-klauer',
     name: 'Katze und Mäuse',
+    short: 'Mäuse dribbeln, Katzen spitzeln Bälle aus dem Feld.',
+    materialQty: { huetchen: '4', baelle: '1/Kind', leibchen: '2' },
     venue: ['draussen', 'halle'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'laufen'],
@@ -429,6 +445,8 @@ window.EXERCISES.push(
   {
     id: 'd-eichhoernchen',
     name: 'Eichhörnchen sammeln Nüsse',
+    short: 'Alle holen Bälle vom Nussbaum und dribbeln sie in ihre Höhle.',
+    materialQty: { huetchen: '16', baelle: '10' },
     venue: ['draussen'],
     phase: 'aufwaermen',
     focus: ['ballgefuehl', 'laufen', 'sozial'],
@@ -487,6 +505,8 @@ window.EXERCISES.push(
   {
     id: 'd-torschuss-kanone',
     name: 'Torschuss-Kanone',
+    short: 'Bis zur Hütchenlinie dribbeln, dann aufs Minitor schießen.',
+    materialQty: { minitore: '2', huetchen: '4', baelle: '1/Kind' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['torschuss', 'ballgefuehl'],
@@ -540,6 +560,8 @@ window.EXERCISES.push(
   {
     id: 'd-krokodilfluss',
     name: 'Krokodilfluss',
+    short: 'Alle dribbeln über den Fluss, Krokodile spitzeln Bälle weg.',
+    materialQty: { huetchen: '8', baelle: '1/Kind', leibchen: '2' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'laufen'],
@@ -591,6 +613,8 @@ window.EXERCISES.push(
   {
     id: 'd-pass-tore',
     name: 'Briefträger-Pässe',
+    short: 'Paare passen sich durch ein Hütchentor, dann Tor wechseln.',
+    materialQty: { huetchen: '8', baelle: '1/Paar' },
     venue: ['draussen', 'halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'sozial'],
@@ -640,6 +664,8 @@ window.EXERCISES.push(
   {
     id: 'd-1gegen1-minitore',
     name: 'Ritterduell 1:1',
+    short: '1 gegen 1 auf zwei Minitore, nach jedem Tor Rollen tauschen.',
+    materialQty: { minitore: '2', huetchen: '4', baelle: '6', leibchen: '2' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'torschuss'],
@@ -691,6 +717,8 @@ window.EXERCISES.push(
   {
     id: 'd-slalom-schuss',
     name: 'Slalom und Schuss',
+    short: 'Durch den Stangenslalom dribbeln, dann sofort aufs Minitor.',
+    materialQty: { stangen: '4', minitore: '1', baelle: '1/Kind', huetchen: '1' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'torschuss', 'koordination'],
@@ -740,6 +768,8 @@ window.EXERCISES.push(
   {
     id: 'd-wettlauf-duell',
     name: 'Wer ist zuerst am Ball?',
+    short: 'Trainer rollt den Ball, zwei Kinder sprinten, wer zuerst trifft.',
+    materialQty: { minitore: '2', baelle: '10', huetchen: '4', leibchen: '2' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['laufen', 'torschuss', 'ballgefuehl'],
@@ -787,6 +817,8 @@ window.EXERCISES.push(
   {
     id: 'd-huetchen-kegeln',
     name: 'Hütchen-Kegeln',
+    short: 'Zwei Teams passen von ihren Linien auf Hütchen in der Mitte.',
+    materialQty: { huetchen: '8', baelle: '1/Kind' },
     venue: ['draussen', 'halle'],
     phase: 'hauptteil',
     focus: ['torschuss', 'ballgefuehl', 'sozial'],
@@ -838,6 +870,8 @@ window.EXERCISES.push(
   {
     id: 'd-fussball-golf',
     name: 'Fußball-Golf',
+    short: 'Ball mit wenigen Pässen durch drei Hütchentore ins Minitor.',
+    materialQty: { huetchen: '7', baelle: '1/Kind', minitore: '1' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'torschuss', 'koordination'],
@@ -890,6 +924,8 @@ window.EXERCISES.push(
   {
     id: 'd-vier-tore-spiel',
     name: 'Tore-Jäger auf 4 Tore',
+    short: 'Alle dribbeln zu einem der vier Minitore und schießen.',
+    materialQty: { minitore: '4', baelle: '1/Kind', huetchen: '4' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['torschuss', 'ballgefuehl', 'laufen'],
@@ -939,6 +975,8 @@ window.EXERCISES.push(
   {
     id: 'd-doppelpass-tor',
     name: 'Doppelpass-Zauber',
+    short: 'Paare spielen Doppelpass bis vors Minitor, dann Schuss.',
+    materialQty: { minitore: '1', huetchen: '2', baelle: '1/Paar' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['torschuss', 'sozial', 'ballgefuehl'],
@@ -985,6 +1023,8 @@ window.EXERCISES.push(
   {
     id: 'd-farben-tor',
     name: 'Farbtore-Alarm',
+    short: 'Alle dribbeln, auf Farbruf zum passenden Minitor und schießen.',
+    materialQty: { minitore: '4', huetchen: '8', baelle: '1/Kind' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['torschuss', 'koordination', 'ballgefuehl'],
@@ -1039,6 +1079,8 @@ window.EXERCISES.push(
   {
     id: 'd-dribbelkoenig',
     name: 'Dribbelkönig',
+    short: 'Alle schützen ihren Ball und spitzeln andere aus dem Quadrat.',
+    materialQty: { huetchen: '4', baelle: '1/Kind' },
     venue: ['draussen', 'halle'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'laufen'],
@@ -1092,6 +1134,8 @@ window.EXERCISES.push(
   {
     id: 'd-funino',
     name: 'Funino 3:3',
+    short: '3 gegen 3 auf je zwei Minitore, Tore nur aus der Schusszone.',
+    materialQty: { minitore: '4', huetchen: '8', leibchen: '3', baelle: '4' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['torschuss', 'sozial', 'ballgefuehl'],
@@ -1145,6 +1189,8 @@ window.EXERCISES.push(
   {
     id: 'd-2gegen2-minitore',
     name: '2:2 auf Minitore',
+    short: '2 gegen 2 auf zwei Minitore, nach jedem Tor neu von hinten.',
+    materialQty: { minitore: '2', huetchen: '4', leibchen: '2', baelle: '4' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['torschuss', 'sozial', 'ballgefuehl'],
@@ -1191,6 +1237,8 @@ window.EXERCISES.push(
   {
     id: 'd-wm-turnier',
     name: 'Kleine WM',
+    short: 'Länderteams spielen 2:2 oder 3:3, nach jedem Spiel Feldwechsel.',
+    materialQty: { minitore: '2', huetchen: '4', leibchen: '3', baelle: '3' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['torschuss', 'sozial'],
@@ -1248,6 +1296,8 @@ window.EXERCISES.push(
   {
     id: 'd-aufstiegsturnier',
     name: 'Champions-League-Aufstieg',
+    short: '1:1 oder 2:2, Sieger steigen ein Feld auf, Verlierer ab.',
+    materialQty: { minitore: '2', huetchen: '4', baelle: '3', leibchen: '2' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['torschuss', 'ballgefuehl', 'sozial'],
@@ -1301,6 +1351,8 @@ window.EXERCISES.push(
   {
     id: 'd-dribbeltore-3gegen3',
     name: 'Dribbeltore 3:3',
+    short: '3 gegen 3, Punkt für jedes Dribbling durch ein Hütchentor.',
+    materialQty: { huetchen: '12', leibchen: '3', baelle: '3' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['ballgefuehl', 'sozial'],
@@ -1350,6 +1402,8 @@ window.EXERCISES.push(
   {
     id: 'd-nummernspiel',
     name: 'Nummernspiel',
+    short: 'Trainer ruft Nummern, die Kinder spielen 1:1 oder 2:2 auf Tore.',
+    materialQty: { minitore: '2', baelle: '10', huetchen: '4', leibchen: '4' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['laufen', 'torschuss', 'sozial'],
@@ -1400,6 +1454,8 @@ window.EXERCISES.push(
   {
     id: 'd-linienfussball',
     name: 'Linienfußball 3:3',
+    short: '3 gegen 3, Ball über die gegnerische Linie dribbeln und stoppen.',
+    materialQty: { huetchen: '8', leibchen: '3', baelle: '3' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['ballgefuehl', 'sozial', 'laufen'],

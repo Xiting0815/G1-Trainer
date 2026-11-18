@@ -8,6 +8,7 @@
   const VENUES = { halle: 'Halle', draussen: 'Draußen' };
   const FOCUS = { ballgefuehl: 'Ballgefühl', koordination: 'Koordination', laufen: 'Laufen', sozial: 'Sozial', torschuss: 'Torschuss' };
   const MAT = Object.fromEntries(Store.MATERIAL.map((m) => [m.key, m.label]));
+  const MAT_ICON = { huetchen: '🔺', baelle: '⚽', minitore: '🥅', leibchen: '🎽', reifen: '⭕', stangen: '📍', baenke: '🪑', matten: '🟦', kaesten: '📦' };
   const LEVEL = { 1: 'Einstieg', 2: 'Mittel', 3: 'Fortgeschritten' };
 
   const EX = {};
@@ -253,16 +254,17 @@
     const today = todayIso();
     const cards = list.map((p) => {
       const d = parseDay(p.day);
-      const names = p.blocks.filter((b) => EX[b.exerciseId]).map((b) => EX[b.exerciseId].name);
+      const names = p.stations ? p.stations.map((id, i) => EX[id] ? `${ST_NUM[i]} ${EX[id].name}` : '').filter(Boolean)
+        : p.blocks.filter((b) => EX[b.exerciseId]).map((b) => EX[b.exerciseId].name);
       const past = p.day < today;
       const att = p.attendees
         ? `<span class="small" style="color:var(--ok)">✔ ${p.attendees.length} Kinder da</span>`
         : `<span class="small muted">👥 Anwesenheit offen</span>`;
-      return `<div class="list-item" data-open-plan="${p.id}">
+      return `<div class="list-item" data-open-plan="${p.id}" style="${p.day === today ? 'border:2px solid var(--primary-2)' : ''}">
         <div class="date-badge">${d.getDate()}<small>${d.toLocaleDateString('de-DE', { month: 'short' })}</small></div>
         <div style="flex:1;min-width:0">
           <div class="row" style="gap:6px"><b>${fmtDay(p.day)}</b><span class="small muted">· ${relDay(p.day)}</span></div>
-          <div class="row" style="gap:6px;margin-top:2px"><span class="tag ${p.venue}">${VENUES[p.venue]} · ${planMinutes(p)}′</span>${att}</div>
+          <div class="row" style="gap:6px;margin-top:2px"><span class="tag ${p.venue}">${VENUES[p.venue]} · ${planMinutes(p)}′</span><span class="tag team-G1">G1${p.withG2 ? '+G2' : ''}</span>${att}</div>
           <div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px">${esc(names.join(' · '))}</div>
           ${past ? '<div class="small" style="color:var(--warn)">⚠️ Noch nicht abgeschlossen</div>' : ''}
         </div>
@@ -276,10 +278,10 @@
         <div class="card empty"><div class="big">📅</div>
           <p>Noch kein Training geplant.<br>Plane dein nächstes Training im Voraus – dann weißt du, was du aufbauen musst.</p>
           <button class="btn btn-primary" data-act="plan-new">Nächstes Training planen</button></div>`}
-      <div class="card small muted" style="margin-top:14px">
+      ${state.sessions.length ? '' : `<div class="card small muted" style="margin-top:14px">
         <b>So funktioniert's:</b> 1. Training im Voraus planen (Datum, Ort, Schwerpunkt) → 2. Übungen und Materialliste ansehen, bei Bedarf tauschen →
         3. Am Trainingstag öffnen, <b>Anwesenheit abhaken</b> und den Timer starten → 4. Abschließen, dann landet es im Verlauf.
-      </div>`;
+      </div>`}`;
   }
 
   function renderNewPlan() {
@@ -337,7 +339,204 @@
     return plan.blocks.reduce((s, b) => s + (b.minutes || 0), 0);
   }
 
+  /* ---------- Stationsmodell: Darstellung ---------- */
+  const PH = {
+    aufbau: { icon: '🧰', cls: 'aufbau', label: 'Ankommen & Aufbau' },
+    ritual: { icon: '📣', cls: 'ritual', label: 'Ritual' },
+    ex: { icon: '🔥', cls: 'warm', label: 'Aufwärmen' },
+    station: { icon: '🔁', cls: 'station', label: 'Stationen' },
+    pause: { icon: '🥤', cls: 'pause', label: 'Trinkpause' },
+    final: { icon: '🏆', cls: 'final', label: 'Abschlussspiel' },
+  };
+  function blockPh(b) {
+    if (b.type === 'ritual') return b.key === 'aufbau' ? PH.aufbau : PH.ritual;
+    if (b.type === 'ex') return b.phase === 'abschluss' ? PH.final : b.phase === 'hauptteil' ? PH.station : PH.ex;
+    return PH[b.type] || PH.ex;
+  }
+  const ST_NUM = ['①', '②', '③'];
+  const exShort = (ex) => ex.short || (ex.steps && ex.steps[0]) || ex.setup || '';
+  function matIcons(ex, qty) {
+    return `<ul class="mat-icons">${(ex.material || []).map((m) => `<li title="${esc(MAT[m] || m)}">${MAT_ICON[m] || '•'}${qty && ex.materialQty && ex.materialQty[m] ? `<b>${esc(ex.materialQty[m])}</b>` : ''}</li>`).join('')}</ul>`;
+  }
+  function matText(ex) {
+    return (ex.material || []).map((m) => `${ex.materialQty && ex.materialQty[m] ? esc(ex.materialQty[m]) + ' ' : ''}${MAT_ICON[m] || ''} ${esc(MAT[m] || m)}`).join(' · ');
+  }
+  function blockTitle(plan, b) {
+    if (b.type === 'station') return `Stationen – Runde ${b.round} von 3`;
+    if (b.type === 'final') { const ex = EX[(plan.stations || [])[2]]; return 'Abschlussspiel' + (ex ? ': ' + ex.name : ''); }
+    if (b.type === 'ex') { const ex = EX[b.exerciseId]; return ex ? `${b.label}: ${ex.name}` : b.label; }
+    return b.label;
+  }
+  function chantFor(b) {
+    if (b.key === 'begruessung') return chantStart();
+    if (b.key === 'verabschiedung') return chantEnd();
+    return '';
+  }
+  function callCard(text, small) {
+    const lines = String(text || '').split('\n').map((l) => l.trim()).filter(Boolean);
+    return `<div class="call-card${small ? ' small' : ''}">${lines.map((l) => {
+      const m = l.match(/^(Trainer|Alle)\s*:\s*(.*)$/i);
+      if (m && /^trainer$/i.test(m[1])) return `<div><div class="call-who">🗣 Trainer</div><div class="call-lead">${esc(m[2])}</div></div>`;
+      if (m) return `<div><div class="call-who">🙌 Alle</div><div class="call-resp">${esc(m[2])}</div></div>`;
+      if (/:$/.test(l)) return `<div class="call-who">🙌 ${esc(l.slice(0, -1))}</div>`;
+      return `<div class="call-resp">${esc(l)}</div>`;
+    }).join('')}</div>`;
+  }
+  function setupItems(plan) {
+    const items = [];
+    (plan.stations || []).forEach((id, i) => {
+      const ex = EX[id];
+      if (ex) items.push({ key: 's' + i, cls: `st-${i + 1}`, title: `${ST_NUM[i]} ${ex.name}`, sub: matText(ex) || 'kein Material', note: ex.setup });
+    });
+    const wb = plan.blocks.find((b) => b.type === 'ex' && EX[b.exerciseId]);
+    if (wb) { const ex = EX[wb.exerciseId]; items.push({ key: 'w', cls: 'st-warm', title: `🔥 Aufwärmen: ${ex.name}`, sub: matText(ex) || 'kein Material', note: ex.setup }); }
+    items.push({ key: 'x', cls: '', title: '⚽ Ballkiste offen, 🥤 Platz für Trinkflaschen', sub: '', note: '' });
+    return items;
+  }
+  function setupChecklist(plan, compact) {
+    const items = setupItems(plan);
+    const done = plan.setupDone || {};
+    const n = items.filter((it) => done[it.key]).length;
+    return `<div class="setup-check">
+      <div class="row" style="margin-bottom:4px"><b>🧰 Aufbau-Checkliste</b><span class="spacer"></span><span class="tag">${n}/${items.length}</span></div>
+      ${items.map((it) => `<label class="${it.cls}"><input type="checkbox" data-setup="${it.key}" ${done[it.key] ? 'checked' : ''}>
+        <span><b>${esc(it.title)}</b>${it.sub ? `<br><span class="small">${it.sub}</span>` : ''}${!compact && it.note ? `<br><span class="small muted">${esc(it.note)}</span>` : ''}</span></label>`).join('')}
+    </div>`;
+  }
+  function groupNames(g) { return g.map((k) => k.name.split(' ')[0]).join(', '); }
+
+  function rotationTable(plan, groups) {
+    return `<table class="rotation">
+      <tr><th></th><th>Runde 1</th><th>Runde 2</th><th>Runde 3</th></tr>
+      ${GROUPS.map((G, g) => `<tr><th><span class="grp grp-${G.key}">${G.key}</span></th>${[1, 2, 3].map((r) => { const si = stationOf(g, r); return `<td class="st-c st-${si + 1}">${ST_NUM[si]}</td>`; }).join('')}</tr>`).join('')}
+    </table>
+    <div class="grp-list">${GROUPS.map((G, g) => `<div><span class="grp grp-${G.key} sm">${G.key}</span> <span class="small">${groups[g].length ? esc(groupNames(groups[g])) : '<span class="muted">–</span>'}</span></div>`).join('')}</div>
+    <p class="small muted" style="margin:6px 0 0">Gruppen nach Jahrgang & Leistungsstand (DFB: Teams nach Entwicklungsstand). ${plan.attendees ? '' : 'Vorläufig – nach dem Abhaken der Anwesenheit aktualisiert.'}</p>`;
+  }
+
+  function stationCard(plan, ex, i, opts) {
+    const mat = planMaterial(plan);
+    const cls = opts && opts.warm ? 'st-warm' : `st-${i + 1}`;
+    const num = opts && opts.warm ? '🔥' : i + 1;
+    const pill = opts && opts.warm ? '<span class="phase-pill warm">🔥 Aufwärmspiel</span>'
+      : i === 2 ? '<span class="phase-pill final">Station 3 · Spielform, danach Abschlussspiel</span>' : `<span class="phase-pill station">Station ${i + 1}</span>`;
+    const swap = opts && opts.warm ? `data-swap="${opts.blockIdx}"` : `data-swap-station="${i}"`;
+    if (!ex) {
+      return `<article class="station ${cls}"><div class="st-num">${num}</div><div class="st-body">${pill}
+        <p class="small">Mit dem ausgewählten Material gibt es hier keine passende Übung.</p>
+        <button class="btn btn-sm" ${swap}>🔄 Neu suchen</button></div></article>`;
+    }
+    const miss = missingFor(ex, mat);
+    return `<article class="station ${cls}">
+      <div class="st-num">${num}</div>
+      <div class="st-body">${pill}
+        <h3 class="st-name">${esc(ex.name)}</h3>
+        <p class="st-short">${esc(exShort(ex))}</p>
+        ${matIcons(ex, true)}
+        ${miss.length ? `<p class="small" style="color:var(--danger);margin:6px 0 0">⚠️ Braucht ${miss.map((m) => MAT[m] || m).join(', ')} – nicht ausgewählt.</p>` : ''}
+      </div>
+      <div class="st-anim">${animBox(ex, true)}</div>
+      <div class="st-actions">
+        <button class="btn btn-sm" data-ex="${ex.id}">📖 Details</button>
+        <button class="btn btn-sm" ${swap}>🔄 Tauschen</button>
+        <button class="fav ${isFav(ex.id) ? 'on' : ''}" data-fav="${ex.id}" aria-label="Favorit">★</button>
+      </div>
+    </article>`;
+  }
+
   function renderPlan(plan) {
+    if (!plan.stations) return renderPlanLegacy(plan);
+    const groups = planGroups(plan);
+    const kidsTotal = planKids(plan).length;
+    const focusLabel = (AREAS.find((a) => a.key === plan.focus) || {}).label || '–';
+    let t = 0;
+    const lines = plan.blocks.map((b) => {
+      const s0 = t; t += b.minutes;
+      const ph = blockPh(b);
+      return `<div class="plan-line"><span class="pl-time">${s0}′</span><span class="pl-dot tl-${ph.cls}">${b.type === 'station' ? ST_NUM[b.round - 1] : ph.icon}</span><span class="pl-title">${esc(blockTitle(plan, b))}</span><span class="pl-min">${b.minutes}′</span></div>`;
+    }).join('');
+    const timeline = plan.blocks.map((b) => { const ph = blockPh(b); return `<span class="tl tl-${ph.cls}" style="flex:${b.minutes}">${b.type === 'station' ? ST_NUM[b.round - 1] : ph.icon}</span>`; }).join('');
+    const warmIdx = plan.blocks.findIndex((b) => b.type === 'ex');
+    const warm = warmIdx >= 0 ? EX[plan.blocks[warmIdx].exerciseId] : null;
+    const finalEx = EX[plan.stations[2]];
+    const finalB = plan.blocks.find((b) => b.type === 'final');
+    const mat = planMaterial(plan);
+    const conflicts = [warm].concat(plan.stations.map((id) => EX[id])).filter((ex) => ex && missingFor(ex, mat).length).length;
+    const isToday = plan.day <= todayIso();
+    const startB = plan.blocks.find((b) => b.key === 'begruessung');
+    const endB = plan.blocks.find((b) => b.key === 'verabschiedung');
+
+    return `
+      <div class="row" style="margin-bottom:4px"><button class="btn btn-sm btn-ghost" data-act="plan-back">‹ Alle Trainings</button><span class="spacer"></span>
+        <label class="btn btn-sm btn-ghost" style="color:var(--primary-2)">📅 Datum<input type="date" id="planDay" value="${plan.day}" style="position:absolute;opacity:0;width:1px;height:1px"></label></div>
+      <h1 style="margin-bottom:4px">${fmtDay(plan.day, true)}</h1>
+      <div class="plan-head" style="margin-bottom:12px">
+        <span class="tag ${plan.venue}">${VENUES[plan.venue]} · ${planMinutes(plan)}′</span>
+        <span class="tag team-G1">G1${plan.withG2 ? ' + G2' : ''}</span>
+        <span class="tag">👥 ${planCount(plan)}</span>
+        <span class="tag">🎯 ${esc(focusLabel)}</span>
+        <span class="small muted">${relDay(plan.day)}</span>
+      </div>
+
+      <div class="card">
+        <div class="timeline">${timeline}</div>
+        <div class="tl-legend"><span>0′</span><span>3 Stationen à ${plan.blocks.find((b) => b.type === 'station').minutes}′</span><span>${planMinutes(plan)}′</span></div>
+        <details class="plan-lines"><summary class="small" style="font-weight:700;margin-top:8px">Ablauf mit Uhrzeiten</summary>${lines}</details>
+      </div>
+
+      ${conflicts ? `<div class="card" style="border:2px solid var(--danger)"><b style="color:var(--danger)">⚠️ ${conflicts} Übung(en) brauchen Material, das nicht da ist.</b>
+        <div style="margin-top:8px"><button class="btn btn-primary btn-sm" data-act="fix-mat">Passend ersetzen</button></div></div>` : ''}
+
+      <h2 class="sec-h">🔥 Aufwärmspiel <span class="muted small">ohne großen Aufbau</span></h2>
+      ${warmIdx >= 0 ? stationCard(plan, warm, 0, { warm: true, blockIdx: warmIdx }) : ''}
+
+      <h2 class="sec-h">🔁 3 Stationen <span class="muted small">Gruppen wechseln</span></h2>
+      ${plan.stations.map((id, i) => stationCard(plan, EX[id], i)).join('')}
+
+      <div class="card">
+        <h3>Wer ist wann wo?</h3>
+        ${rotationTable(plan, groups)}
+      </div>
+
+      <div class="card final-card">
+        <h3 style="margin:0">🏆 Abschlussspiel · ${finalB ? finalB.minutes : ''}′</h3>
+        <p style="margin:6px 0 0">${finalEx ? `An <b>Station ③</b>: <b>${esc(finalEx.name)}</b> – alle Gruppen zusammen${planCount(plan) > 8 ? ' (bei vielen Kindern 2 Felder / Turnier)' : ''}.` : 'Spielform an Station ③.'}</p>
+      </div>
+
+      <div class="card">
+        <h3>📣 Rufe</h3>
+        <div class="grid grid-2">
+          ${startB ? `<div><div class="small muted" style="margin-bottom:4px">Begrüßung</div>${callCard(chantStart(), true)}</div>` : ''}
+          ${endB ? `<div><div class="small muted" style="margin-bottom:4px">Abschluss</div>${callCard(chantEnd(), true)}</div>` : ''}
+        </div>
+      </div>
+
+      <div class="card">${setupChecklist(plan)}</div>
+
+      <h2 class="sec-h">⚙️ Verwaltung</h2>
+      <div class="card" style="${!plan.attendees && isToday ? 'border:2px solid var(--primary-2)' : ''}">
+        <div class="row">
+          <div style="flex:1"><h3 style="margin:0">👥 Anwesenheit</h3>
+            <div class="small muted">${plan.attendees ? `<b style="color:var(--ok)">${plan.attendees.length} von ${kidsTotal} da</b>` : (isToday ? 'Heute ist Training – hake ab, wer da ist.' : 'Wird am Trainingstag abgehakt.')}</div></div>
+          <button class="btn ${!plan.attendees && isToday ? 'btn-primary' : ''}" data-act="attendance">${plan.attendees ? 'Ändern' : 'Abhaken'}</button>
+        </div>
+        <label class="row" style="margin-top:12px;cursor:pointer"><input type="checkbox" id="planG2" ${plan.withG2 ? 'checked' : ''} style="width:22px;height:22px;accent-color:var(--primary-2)"> <span>Ich trainiere heute auch die <b>G2</b></span></label>
+      </div>
+      <details class="card">
+        <summary style="font-weight:700;cursor:pointer">🧺 Verfügbares Material (${mat.size}/${Store.MATERIAL.length})</summary>
+        <p class="small muted" style="margin:8px 0">Antippen zum Ändern – Übungen, für die dann etwas fehlt, werden automatisch ersetzt.</p>
+        ${materialChips(mat, 'data-plmat')}
+      </details>
+      <div class="row" style="margin-bottom:14px">
+        <button class="btn" data-act="regen">🔄 Alle Übungen neu</button><span class="spacer"></span>
+        <button class="btn btn-danger" data-act="plan-delete">Löschen</button>
+      </div>
+      <button class="btn btn-big" data-act="finish">✅ Training abschließen & speichern</button>
+      <div class="sticky-cta"><button class="btn btn-primary btn-big" data-act="start">▶ Training starten</button></div>
+    `;
+  }
+
+  function renderPlanLegacy(plan) {
     const count = planCount(plan);
     let t = 0;
     const blocks = plan.blocks.map((b, i) => {
@@ -415,7 +614,7 @@
       </div>
       <div class="grid grid-2" style="margin-bottom:14px">
         <button class="btn btn-primary btn-big" data-act="start">▶️ Training starten</button>
-        <button class="btn btn-big" data-act="regen">🔄 Übungen komplett neu</button>
+        <button class="btn btn-big" data-act="regen">🔁 Auf 3-Stationen-Ablauf umstellen</button>
       </div>
       <div class="card">${blocks}</div>
       <button class="btn btn-big" data-act="finish">✅ Training abschließen & speichern</button>
@@ -559,11 +758,11 @@
     const inactive = state.kids.filter((k) => k.active === false);
     const avg = Generator.avgRatings(kids);
     const overview = kids.length ? `
-      <div class="card">
-        <div class="card-head"><h3 style="margin:0">${ui.kidTeam === 'alle' ? 'G1 + G2' : ui.kidTeam} im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></div>
+      <details class="card">
+        <summary class="card-head" style="cursor:pointer;margin:0"><h3 style="margin:0">${ui.kidTeam === 'alle' ? 'G1 + G2' : ui.kidTeam} im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></summary>
         ${AREAS.map((a) => `<div class="area-row"><span>${a.icon} ${a.label}</span><div class="bar"><i style="width:${(avg[a.key] / 5) * 100}%"></i></div><b>${avg[a.key].toFixed(1)}</b></div>`).join('')}
         <p class="small muted" style="margin:8px 0 0">Größtes Potenzial: <b>${AREAS.find((a) => a.key === Generator.weakestArea(avg)).label}</b> – darauf legt der automatische Vorschlag den Schwerpunkt.</p>
-      </div>` : '';
+      </details>` : '';
 
     const groups = [];
     yearsOf(kids).forEach((y) => groups.push([`Jahrgang ${y}`, kids.filter((k) => yearOf(k) === y)]));
@@ -718,14 +917,17 @@
   function exCards() {
     const list = filteredExercises();
     if (!list.length) return `<div class="card empty"><div class="big">🔍</div><p>Keine Übungen gefunden.</p></div>`;
-    return `<div class="grid grid-3">${list.map((e) => `
-      <div class="ex-card" data-ex="${e.id}">
-        ${animBox(e, true)}
-        <div class="ex-card-body">
-          <div class="row" style="align-items:flex-start;flex-wrap:nowrap"><h3 style="flex:1">${esc(e.name)}</h3>
-            <button class="fav ${isFav(e.id) ? 'on' : ''}" data-fav="${e.id}" aria-label="Favorit">★</button></div>
-          <div class="ex-meta">${venueTags(e)} <span class="tag">${PHASES[e.phase]}</span> <span class="small muted">${e.duration}′ · ${LEVEL[e.level]}</span></div>
+    const pill = { aufwaermen: 'warm', hauptteil: 'station', abschluss: 'final' };
+    return `<div class="ex-list">${list.map((e) => `
+      <div class="ex-row ph-${e.phase}" data-ex="${e.id}">
+        ${animBox(e, false)}
+        <div style="min-width:0">
+          <h3>${esc(e.name)}</h3>
+          <p class="st-short">${esc(exShort(e))}</p>
+          <div class="ex-meta"><span class="phase-pill ${pill[e.phase]}">${PHASES[e.phase]}</span>${ui.exVenue === 'alle' ? venueTags(e) : ''}<span class="small muted">${e.duration}′ · 👥 ${e.players ? e.players[0] + '–' + e.players[1] : '–'}</span></div>
+          <div style="margin-top:4px">${matIcons(e)}</div>
         </div>
+        <button class="fav ${isFav(e.id) ? 'on' : ''}" data-fav="${e.id}" aria-label="Favorit">★</button>
       </div>`).join('')}</div>`;
   }
 
@@ -759,28 +961,25 @@
     const e = EX[id];
     if (!e) return;
     const list = (arr) => (arr || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    const pillCls = { aufwaermen: 'warm', hauptteil: 'station', abschluss: 'final' }[e.phase];
     openModal(`
       <div class="detail">
-        <h2>${esc(e.name)}</h2>
-        <div class="ex-meta" style="margin-bottom:12px">${venueTags(e)} <span class="tag">${PHASES[e.phase]}</span>
-          ${e.focus.map((f) => `<span class="tag">${FOCUS[f] || f}</span>`).join(' ')}</div>
+        <h2>${esc(e.name)} <button class="fav ${isFav(e.id) ? 'on' : ''}" id="dFav" aria-label="Favorit" style="vertical-align:middle">★</button></h2>
+        <div class="ex-meta"><span class="phase-pill ${pillCls}">${PHASES[e.phase]}</span>${venueTags(e)} ${e.focus.map((f) => `<span class="tag">${FOCUS[f] || f}</span>`).join(' ')}</div>
+        <div class="facts"><span>⏱ ${e.duration}′</span><span>👥 ${e.players ? e.players[0] + '–' + e.players[1] : '–'}</span><span>📶 ${LEVEL[e.level]}</span></div>
         ${animBox(e, true)}
         <div class="anim-ctrl">
           <button class="btn btn-sm" id="aToggle">⏸️ Pause</button>
           <span class="spacer"></span>
-          <span class="small muted">Tempo</span>
           <div class="chips" id="aSpeed"><button class="chip" data-speed="0.5">½×</button><button class="chip on" data-speed="1">1×</button><button class="chip" data-speed="2">2×</button></div>
         </div>
-        ${e.story ? `<div class="story">📖 ${esc(e.story)}</div>` : ''}
+        <p class="ex-short-big" style="font-size:1.15rem">${esc(exShort(e))}</p>
+        <p><b>🧺 Material:</b> ${matText(e) || 'kein Material'}</p>
         <h3>Aufbau</h3><p>${esc(e.setup)}</p>
         <h3>Ablauf</h3><ol>${list(e.steps)}</ol>
-        ${e.tips && e.tips.length ? `<h3>Coaching-Tipps</h3><ul>${list(e.tips)}</ul>` : ''}
-        <div class="vari" style="margin-bottom:12px">
-          ${e.easier ? `<div><b>🟢 Leichter:</b><br>${esc(e.easier)}</div>` : ''}
-          ${e.harder ? `<div><b>🔴 Schwerer:</b><br>${esc(e.harder)}</div>` : ''}
-        </div>
-        <p class="small muted">⏱️ ${e.duration} Min · 👥 ${e.players ? e.players[0] + '–' + e.players[1] : '–'} Kinder · 📶 ${LEVEL[e.level]} · 🧺 ${(e.material || []).map((m) => MAT[m] || m).join(', ') || 'kein Material'}</p>
-        <button class="btn ${isFav(e.id) ? 'btn-primary' : ''}" id="dFav">★ ${isFav(e.id) ? 'Favorit' : 'Als Favorit merken'}</button>
+        ${e.story ? `<details><summary>📖 Geschichte zum Erzählen</summary><p>${esc(e.story)}</p></details>` : ''}
+        ${e.tips && e.tips.length ? `<details><summary>💡 Coaching-Tipps</summary><ul>${list(e.tips)}</ul></details>` : ''}
+        ${e.easier || e.harder ? `<details><summary>🟢 Leichter / 🔴 Schwerer</summary>${e.easier ? `<p><b>🟢</b> ${esc(e.easier)}</p>` : ''}${e.harder ? `<p><b>🔴</b> ${esc(e.harder)}</p>` : ''}</details>` : ''}
       </div>`, (root) => {
       const animEl = root.querySelector('.anim');
       const ctrl = animEl && animEl._ctrl;
@@ -795,8 +994,7 @@
       });
       root.querySelector('#dFav').addEventListener('click', (ev) => {
         toggleFav(e.id);
-        ev.target.classList.toggle('btn-primary', isFav(e.id));
-        ev.target.textContent = '★ ' + (isFav(e.id) ? 'Favorit' : 'Als Favorit merken');
+        ev.target.classList.toggle('on', isFav(e.id));
       });
     });
   }
@@ -828,7 +1026,7 @@
       </div>
       ${list.map((s) => {
         const d = new Date(s.date);
-        const names = s.blocks.filter((b) => b.exerciseId && EX[b.exerciseId]).map((b) => EX[b.exerciseId].name);
+        const names = (s.stations || []).concat(s.blocks.map((b) => b.exerciseId)).filter((id) => id && EX[id]).map((id) => EX[id].name);
         const sm = SMILEYS.find((x) => x[0] === s.rating);
         return `<div class="list-item" data-session="${s.id}">
           <div class="date-badge">${d.getDate()}<small>${d.toLocaleDateString('de-DE', { month: 'short' })}</small></div>
@@ -856,9 +1054,10 @@
       <h3>Anwesend (${names.length || s.count || 0})</h3>
       <p class="small">${names.length ? esc(names.join(', ')) : '<span class="muted">keine Liste</span>'}</p>
       <h3>Ablauf</h3>
+      ${s.stations ? `<p>${s.stations.map((id, i) => EX[id] ? `${ST_NUM[i]} <a href="#" data-ex="${id}">${esc(EX[id].name)}</a>` : '').join('<br>')}</p>` : ''}
       <ul style="padding-left:1.1rem">${s.blocks.map((b) => {
         const ex = EX[b.exerciseId];
-        return `<li><b>${b.minutes}′</b> ${esc(b.label)}${ex ? `: <a href="#" data-ex="${ex.id}">${esc(ex.name)}</a>` : ''}</li>`;
+        return `<li><b>${b.minutes}′</b> ${esc(b.type === 'station' || b.type === 'final' ? blockTitle(s, b) : b.label)}${ex ? `: <a href="#" data-ex="${ex.id}">${esc(ex.name)}</a>` : ''}</li>`;
       }).join('')}</ul>
       <div class="row" style="margin-top:12px">
         <button class="btn btn-danger" id="sDel">Löschen</button><span class="spacer"></span>
@@ -1024,11 +1223,7 @@
     timer.remaining -= (now - timer.last) / 1000;
     timer.last = now;
     if (timer.remaining <= 0 && !timer.beeped) { timer.beeped = true; beep(); }
-    const c = document.getElementById('tClock');
-    if (c) {
-      c.textContent = fmtClock(timer.remaining);
-      c.className = 'clock' + (timer.remaining < 0 ? ' over' : timer.remaining < 60 ? ' low' : '');
-    }
+    updateClock();
   }
 
   function drawTimer() {
@@ -1037,58 +1232,124 @@
     if (!el || !plan) return;
     destroyAll(timer.ctrls);
     const b = plan.blocks[timer.idx];
-    const ex = EX[b.exerciseId];
     const next = plan.blocks[timer.idx + 1];
-    const r = b.type !== 'ex' ? Generator.RITUALS[b.key] : null;
+    const type = b.type === 'ritual' ? (b.key === 'aufbau' ? 'arrive' : 'ritual') : b.type;
+    const ph = blockPh(b);
+    const total = planMinutes(plan);
+    const elapsed = plan.blocks.slice(0, timer.idx).reduce((s, x) => s + x.minutes, 0);
     const list = (arr) => (arr || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    const groups = plan.stations ? planGroups(plan) : null;
+    const nextRound = plan.blocks.slice(timer.idx + 1).find((x) => x.type === 'station');
+    const moveHint = (round) => GROUPS.map((G, g) => `<span class="grp grp-${G.key} sm">${G.key}</span>→${ST_NUM[stationOf(g, round)]}`).join(' &nbsp; ');
+    el.dataset.type = type;
+    el.classList.toggle('paused', !timer.running);
+
+    let core = '', details = '', typeLabel = ph.label, title = blockTitle(plan, b);
+    if (type === 'ritual') {
+      const r = Generator.RITUALS[b.key] || {};
+      typeLabel = '📣 Ritual';
+      title = b.label;
+      core = (chantFor(b) ? callCard(chantFor(b)) : '') + `<p class="timer-note">${esc(r.text || '')}</p>`;
+      if (r.tips) details = `<details><summary>Tipps</summary><ul>${list(r.tips)}</ul></details>`;
+    } else if (type === 'arrive') {
+      typeLabel = '🧰 Ankommen & Aufbau';
+      title = 'Stationen aufbauen';
+      core = `<p class="timer-note">Kinder: Ballkiste offen, freies Dribbeln. Trainer: aufbauen ↓</p>${plan.stations ? setupChecklist(plan, true) : ''}`;
+    } else if (type === 'station') {
+      typeLabel = `🔁 Stationen · Runde ${b.round}/3`;
+      title = 'Stationsbetrieb';
+      core = `<div class="rot-grid">${GROUPS.map((G, g) => {
+        const si = stationOf(g, b.round); const ex = EX[plan.stations[si]];
+        return `<div class="rot-row st-${si + 1}"><span class="grp grp-${G.key}">${G.key}</span><span class="st-num sm">${si + 1}</span>
+          <div style="min-width:0"><div class="rot-st">${ex ? esc(ex.name) : '–'}</div><div class="rot-short">${ex ? esc(exShort(ex)) : ''}</div>
+          ${groups[g].length ? `<div class="grp-names">${esc(groupNames(groups[g]))}</div>` : ''}</div></div>`;
+      }).join('')}</div>
+      ${b.round < 3 ? `<div class="rot-switch">Beim Wechsel: ${moveHint(b.round + 1)}</div>` : ''}`;
+      details = `<details><summary>Animationen der Stationen</summary>${plan.stations.map((id, i) => EX[id] ? `<p style="margin:10px 0 4px"><b>${ST_NUM[i]} ${esc(EX[id].name)}</b></p>${animBox(EX[id], true)}<ol class="small">${list(EX[id].steps)}</ol>` : '').join('')}</details>`;
+    } else if (type === 'pause') {
+      typeLabel = '🥤 Trinkpause';
+      core = `<div class="big-emoji">🥤</div><p class="timer-note" style="text-align:center">Alle trinken. Lob für die Gruppe!</p>
+        ${nextRound ? `<div class="rot-switch">Danach Runde ${nextRound.round}: ${moveHint(nextRound.round)}</div>` : ''}`;
+    } else {
+      const ex = type === 'final' ? EX[(plan.stations || [])[2]] : EX[b.exerciseId];
+      typeLabel = type === 'final' ? '🏆 Abschlussspiel' : (b.phase === 'aufwaermen' ? '🔥 Aufwärmen' : '⚽ Übung');
+      title = ex ? ex.name : b.label;
+      core = ex ? `<p class="ex-short-big">${esc(exShort(ex))}</p>
+          ${type === 'final' ? '<p class="timer-note">An Station ③ – alle Gruppen zusammen.</p>' : ''}
+          <ul class="timer-steps">${list((ex.steps || []).slice(0, 3))}</ul>
+          <div class="timer-thumb">${animBox(ex, true)}</div>`
+        : '<p class="timer-note">Keine Übung hinterlegt.</p>';
+      if (ex) details = `<details><summary>Aufbau, Tipps, Varianten</summary>
+          <p class="small"><b>Aufbau:</b> ${esc(ex.setup)}</p>${ex.story ? `<p class="small"><b>Geschichte:</b> ${esc(ex.story)}</p>` : ''}
+          ${ex.tips && ex.tips.length ? `<ul class="small">${list(ex.tips)}</ul>` : ''}
+          ${ex.easier ? `<p class="small">🟢 ${esc(ex.easier)}</p>` : ''}${ex.harder ? `<p class="small">🔴 ${esc(ex.harder)}</p>` : ''}</details>`;
+    }
+
     el.innerHTML = `
       <div class="timer-top">
         <button class="icon-btn" id="tClose" aria-label="Timer schließen">✕</button>
-        <div style="flex:1"><div class="small muted">${timer.idx + 1} / ${plan.blocks.length} · ${esc(b.label)}</div><b>${esc(ex ? ex.name : (r ? r.title : b.label))}</b></div>
+        <div class="timer-progress">${plan.blocks.map((x, i) => `<i class="tl-${blockPh(x).cls} ${i < timer.idx ? 'done' : i === timer.idx ? 'now' : ''}" style="--min:${x.minutes}"></i>`).join('')}</div>
+        <span class="small muted" style="white-space:nowrap">${elapsed}/${total}′</span>
       </div>
-      <div class="timer-progress">${plan.blocks.map((x, i) => `<i class="${i < timer.idx ? 'done' : i === timer.idx ? 'now' : ''}"></i>`).join('')}</div>
       <div class="timer-main">
         <div>
-          ${ex ? animBox(ex, true) : `<div class="card" style="text-align:center;font-size:3rem;margin:0">${b.type === 'pause' ? '🥤' : '🙌'}</div>`}
-          <div id="tClock" class="clock">${fmtClock(timer.remaining)}</div>
-          <div class="timer-ctrl">
-            <button class="btn" id="tPrev" ${timer.idx === 0 ? 'disabled' : ''}>⏮️</button>
-            <button class="btn btn-primary" id="tPlay">${timer.running ? '⏸️ Pause' : '▶️ Start'}</button>
-            <button class="btn" id="tNext">${next ? '⏭️' : '🏁'}</button>
-          </div>
-          <div class="row" style="justify-content:center;margin-top:8px"><button class="btn btn-sm btn-ghost" id="tMinus">−1 Min</button><button class="btn btn-sm btn-ghost" id="tPlus">+1 Min</button></div>
-          <div class="next-up">${next ? `Danach: <b>${esc(next.label)}</b>${EX[next.exerciseId] ? ' – ' + esc(EX[next.exerciseId].name) : ''} (${next.minutes}′)` : 'Letzter Block 🎉'}</div>
+          <span class="timer-type">${typeLabel}</span>
+          <h1 class="timer-title">${esc(title)}</h1>
+          <div class="clock-wrap"><div id="tClock" class="clock">${fmtClock(timer.remaining)}</div><span class="paused-badge">PAUSE</span></div>
+          ${core}
         </div>
-        <div class="card detail" style="margin:0">
-          ${ex ? `
-            ${ex.story ? `<div class="story">📖 ${esc(ex.story)}</div>` : ''}
-            <h3>Aufbau</h3><p class="small">${esc(ex.setup)}</p>
-            <h3>Ablauf</h3><ol class="small">${list(ex.steps)}</ol>
-            ${ex.tips && ex.tips.length ? `<h3>Tipps</h3><ul class="small">${list(ex.tips)}</ul>` : ''}
-            ${ex.easier ? `<p class="small"><b>🟢</b> ${esc(ex.easier)}</p>` : ''}${ex.harder ? `<p class="small"><b>🔴</b> ${esc(ex.harder)}</p>` : ''}`
-          : `<p>${esc(r ? r.text : '')}</p>${r && r.tips ? `<ul class="small">${list(r.tips)}</ul>` : ''}`}
+        <div>
+          <div class="next-bar" id="tNextBar">${next ? `▸ Danach: <b>${esc(blockTitle(plan, next))}</b> · ${next.minutes}′` : '🏁 Letzter Block'}</div>
+          ${details}
+        </div>
+      </div>
+      <div class="timer-dock">
+        <div class="main">
+          <button class="btn" id="tMinus">−1′</button>
+          <button class="btn btn-primary" id="tPlay">${timer.running ? '⏸ Pause' : '▶ Start'}</button>
+          <button class="btn" id="tPlus">+1′</button>
+        </div>
+        <div class="nav">
+          <button class="btn btn-ghost" id="tPrev" ${timer.idx === 0 ? 'disabled' : ''}>‹ Zurück</button>
+          <button class="btn btn-ghost" id="tNext">${next ? 'Weiter ›' : 'Fertig 🏁'}</button>
         </div>
       </div>`;
     mountAnims(el, timer.ctrls);
+    updateClock();
     el.querySelector('#tClose').onclick = () => { if (confirm('Timer beenden?')) closeTimer(); };
     el.querySelector('#tPlay').onclick = () => {
       if (timer.audio && timer.audio.state === 'suspended') timer.audio.resume();
       timer.running = !timer.running; timer.last = performance.now();
-      el.querySelector('#tPlay').textContent = timer.running ? '⏸️ Pause' : '▶️ Start';
+      el.querySelector('#tPlay').textContent = timer.running ? '⏸ Pause' : '▶ Start';
+      el.classList.toggle('paused', !timer.running);
     };
     el.querySelector('#tPrev').onclick = () => goBlock(timer.idx - 1);
     el.querySelector('#tNext').onclick = () => {
       if (next) goBlock(timer.idx + 1);
       else { const pl = timer.plan; closeTimer(); if (confirm('Training abschließen und im Verlauf speichern?')) finishPlan(pl); }
     };
-    el.querySelector('#tPlus').onclick = () => { timer.remaining += 60; if (timer.remaining > 0) timer.beeped = false; tick(); forceClock(); };
-    el.querySelector('#tMinus').onclick = () => { timer.remaining -= 60; tick(); forceClock(); };
+    el.querySelector('#tPlus').onclick = () => { timer.remaining += 60; if (timer.remaining > 0) timer.beeped = false; updateClock(); };
+    el.querySelector('#tMinus').onclick = () => { timer.remaining -= 60; updateClock(); };
+    el.onchange = (e) => {
+      const cb = e.target.closest('[data-setup]'); if (!cb) return;
+      plan.setupDone = plan.setupDone || {}; plan.setupDone[cb.dataset.setup] = cb.checked; save();
+    };
   }
 
-  function forceClock() {
+  function updateClock() {
     const c = document.getElementById('tClock');
-    if (c) { c.textContent = fmtClock(timer.remaining); c.className = 'clock' + (timer.remaining < 0 ? ' over' : timer.remaining < 60 ? ' low' : ''); }
+    const el = document.getElementById('timer');
+    if (!c || !timer) return;
+    c.textContent = fmtClock(timer.remaining);
+    c.className = 'clock' + (timer.remaining < 0 ? ' over' : timer.remaining < 60 ? ' low' : '');
+    el.classList.toggle('over', timer.remaining < 0);
+    const nb = document.getElementById('tNextBar');
+    if (nb) nb.classList.toggle('soon', timer.remaining < 60);
+    const nx = document.getElementById('tNext');
+    if (nx) nx.classList.toggle('btn-primary', timer.remaining < 0);
   }
+
+  const forceClock = () => updateClock();
 
   function goBlock(i) {
     const plan = timer.plan;
@@ -1222,6 +1483,11 @@
 
   $view.addEventListener('change', (e) => {
     const t = e.target;
+    if (t.dataset.setup) {
+      const pl = planById(ui.openPlan);
+      if (pl) { pl.setupDone = pl.setupDone || {}; pl.setupDone[t.dataset.setup] = t.checked; save(); rerender(); }
+      return;
+    }
     if (t.id === 'pG2') { ui.withG2 = t.checked; rerender(); return; }
     if (t.id === 'planG2') {
       const pl = planById(ui.openPlan);

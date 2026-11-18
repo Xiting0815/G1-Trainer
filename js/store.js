@@ -6,7 +6,7 @@
     { key: 'ballgefuehl', label: 'Ballgefühl', icon: '⚽' },
     { key: 'koordination', label: 'Koordination', icon: '🤸' },
     { key: 'laufen', label: 'Laufen', icon: '🏃' },
-    { key: 'sozial', label: 'Sozial & Konzentration', icon: '🤝' },
+    { key: 'sozial', label: 'Sozial', icon: '🤝' },
   ];
 
   const MATERIAL = [
