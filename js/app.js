@@ -341,7 +341,7 @@
 
   /* ---------- Stationsmodell: Darstellung ---------- */
   const PH = {
-    aufbau: { icon: '🧰', cls: 'aufbau', label: 'Ankommen & Aufbau' },
+    aufbau: { icon: '⚽', cls: 'aufbau', label: 'Freies Training & Aufbau' },
     ritual: { icon: '📣', cls: 'ritual', label: 'Ritual' },
     ex: { icon: '🔥', cls: 'warm', label: 'Aufwärmen' },
     station: { icon: '🔁', cls: 'station', label: 'Stationen' },
@@ -487,8 +487,9 @@
       ${conflicts ? `<div class="card" style="border:2px solid var(--danger)"><b style="color:var(--danger)">⚠️ ${conflicts} Übung(en) brauchen Material, das nicht da ist.</b>
         <div style="margin-top:8px"><button class="btn btn-primary btn-sm" data-act="fix-mat">Passend ersetzen</button></div></div>` : ''}
 
-      <h2 class="sec-h">🔥 Aufwärmspiel <span class="muted small">ohne großen Aufbau</span></h2>
-      ${warmIdx >= 0 ? stationCard(plan, warm, 0, { warm: true, blockIdx: warmIdx }) : ''}
+      ${warmIdx >= 0 ? `<div class="card" style="border:2px solid var(--primary-2)"><b>Älterer Ablauf mit Aufwärmübung.</b><p class="small" style="margin:4px 0 8px">Neu: freies Training während des Aufbaus, danach direkt Stationen (längere Stationszeiten).</p>
+        <button class="btn btn-primary btn-sm" data-act="regen-keep">Auf neuen Ablauf umstellen (Stationen bleiben)</button></div>
+        <h2 class="sec-h">🔥 Aufwärmspiel</h2>${stationCard(plan, warm, 0, { warm: true, blockIdx: warmIdx })}` : `<div class="card" style="border-left:6px solid var(--ph-aufbau)"><b>⚽ Freies Training & Aufbau · ${plan.blocks[0].minutes}′</b><p class="small" style="margin:4px 0 0">Kinder toben frei mit Ball, ihr baut in der Zeit die 3 Stationen auf.</p></div>`}
 
       <h2 class="sec-h">🔁 3 Stationen <span class="muted small">Gruppen wechseln</span></h2>
       ${plan.stations.map((id, i) => stationCard(plan, EX[id], i)).join('')}
@@ -1177,6 +1178,7 @@
 
   function startTimer(plan) {
     if (!plan) return;
+    document.getElementById('toast').hidden = true;
     timer = { plan, idx: 0, remaining: plan.blocks[0].minutes * 60, running: false, last: 0, beeped: false, ctrls: [], wake: null, int: null, audio: null };
     const el = document.createElement('div');
     el.className = 'timer';
@@ -1252,9 +1254,9 @@
       core = (chantFor(b) ? callCard(chantFor(b)) : '') + `<p class="timer-note">${esc(r.text || '')}</p>`;
       if (r.tips) details = `<details><summary>Tipps</summary><ul>${list(r.tips)}</ul></details>`;
     } else if (type === 'arrive') {
-      typeLabel = '🧰 Ankommen & Aufbau';
-      title = 'Stationen aufbauen';
-      core = `<p class="timer-note">Kinder: Ballkiste offen, freies Dribbeln. Trainer: aufbauen ↓</p>${plan.stations ? setupChecklist(plan, true) : ''}`;
+      typeLabel = '⚽ Freies Training';
+      title = 'Kinder toben mit Ball – ihr baut auf';
+      core = `<p class="timer-note"><b>Kinder:</b> ankommen, laufen, toben – jedes Kind mit Ball.<br><b>Trainer:</b> Stationen aufbauen ↓</p>${plan.stations ? setupChecklist(plan, true) : ''}`;
     } else if (type === 'station') {
       typeLabel = `🔁 Stationen · Runde ${b.round}/3`;
       title = 'Stationsbetrieb';
@@ -1463,6 +1465,11 @@
       case 'plan-delete': {
         const pl = planById(ui.openPlan);
         if (pl && confirm(`Training am ${fmtDay(pl.day)} löschen?`)) { state.planned = state.planned.filter((p) => p.id !== pl.id); ui.openPlan = null; save(); rerender(); toast('Gelöscht'); }
+        break;
+      }
+      case 'regen-keep': {
+        const pl = planById(ui.openPlan);
+        if (pl) { pl.blocks = Generator.TEMPLATES[pl.venue].blocks.map((x) => Object.assign({ exerciseId: null, phase: null, key: null }, x)); save(); rerender(); toast('Ablauf umgestellt'); }
         break;
       }
       case 'fix-mat': { const pl = planById(ui.openPlan); const n = fixMaterial(pl); rerender(); toast(`${n} Übung(en) ersetzt`); break; }
