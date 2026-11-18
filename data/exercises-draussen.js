@@ -1136,6 +1136,7 @@ window.EXERCISES.push(
     name: 'Funino 3:3',
     short: '3 gegen 3 auf je zwei Minitore, Tore nur aus der Schusszone.',
     materialQty: { minitore: '4', huetchen: '8', leibchen: '3', baelle: '4' },
+    funino: { step: 4, type: 'spiel' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['torschuss', 'sozial', 'ballgefuehl'],

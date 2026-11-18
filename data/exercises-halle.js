@@ -897,6 +897,7 @@ window.EXERCISES.push(
     name: 'Funino – Vier-Burgen-Spiel',
     short: '3 gegen 3 auf je zwei Minitore, Tore nur aus der Schusszone.',
     materialQty: { minitore: '4', baelle: '4', leibchen: '3', huetchen: '6' },
+    funino: { step: 4, type: 'spiel' },
     venue: ['halle', 'draussen'],
     phase: 'abschluss',
     focus: ['sozial', 'torschuss', 'ballgefuehl'],

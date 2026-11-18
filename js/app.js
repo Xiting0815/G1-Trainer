@@ -32,6 +32,7 @@
     kidYear: 'alle',
     kidTeam: 'alle',
     withG2: false,
+    mode: 'solo',
     kidElig: 'alle',
     openPlan: null,
     newPlan: false,
@@ -254,7 +255,7 @@
     const today = todayIso();
     const cards = list.map((p) => {
       const d = parseDay(p.day);
-      const names = p.stations ? p.stations.map((id, i) => EX[id] ? `${ST_NUM[i]} ${EX[id].name}` : '').filter(Boolean)
+      const names = p.stations ? p.stations.map((id, i) => EX[id] ? `${isSolo(p) ? '🔁' : ST_NUM[i]} ${EX[id].name}` : '').concat(EX[p.funinoLearn] ? ['🎓 ' + EX[p.funinoLearn].name] : [], EX[p.funinoPlay] ? ['🥅 ' + EX[p.funinoPlay].name] : []).filter(Boolean)
         : p.blocks.filter((b) => EX[b.exerciseId]).map((b) => EX[b.exerciseId].name);
       const past = p.day < today;
       const att = p.attendees
@@ -306,6 +307,14 @@
         </div>
       </div>
       <div class="card">
+        <h3>Wer trainiert?</h3>
+        <div class="seg">
+          <button class="${ui.mode === 'solo' ? 'on' : ''}" data-mode="solo">🧍 Ich bin allein<span class="seg-sub">1 Station + Funino</span></button>
+          <button class="${ui.mode === 'team' ? 'on' : ''}" data-mode="team">🧍🧍 Wir sind zu zweit<span class="seg-sub">3 Stationen + Funino</span></button>
+        </div>
+        <p class="small muted" style="margin:10px 0 0">🥅 Funino-Lernweg: aktuell <b>Schritt ${Generator.funinoStep(state)} von 4</b> – steigt alle 2 Trainings.</p>
+      </div>
+      <div class="card">
         <h3>Schwerpunkt</h3>
         <div class="chips">
           <button class="chip ${ui.focus === 'auto' ? 'on' : ''}" data-focus="auto">✨ Automatisch${kids.length ? ` (${esc(weakLabel)})` : ''}</button>
@@ -347,9 +356,12 @@
     station: { icon: '🔁', cls: 'station', label: 'Stationen' },
     pause: { icon: '🥤', cls: 'pause', label: 'Trinkpause' },
     final: { icon: '🏆', cls: 'final', label: 'Abschlussspiel' },
+    funino: { icon: '🥅', cls: 'funino', label: 'Funino' },
   };
   function blockPh(b) {
     if (b.type === 'ritual') return b.key === 'aufbau' ? PH.aufbau : PH.ritual;
+    if (b.type === 'single') return PH.station;
+    if (b.type === 'funino-learn' || b.type === 'funino-play') return PH.funino;
     if (b.type === 'ex') return b.phase === 'abschluss' ? PH.final : b.phase === 'hauptteil' ? PH.station : PH.ex;
     return PH[b.type] || PH.ex;
   }
@@ -361,9 +373,22 @@
   function matText(ex) {
     return (ex.material || []).map((m) => `${ex.materialQty && ex.materialQty[m] ? esc(ex.materialQty[m]) + ' ' : ''}${MAT_ICON[m] || ''} ${esc(MAT[m] || m)}`).join(' · ');
   }
+  const isSolo = (plan) => plan.mode === 'solo';
+  function funinoEx(plan, which) {
+    if (which === 'learn') return EX[plan.funinoLearn] || (!isSolo(plan) && plan.stations ? EX[plan.stations[2]] : null);
+    return EX[plan.funinoPlay] || (plan.stations ? EX[plan.stations[2]] : null);
+  }
+  function blockEx(plan, b) {
+    if (b.type === 'single') return EX[(plan.stations || [])[0]];
+    if (b.type === 'funino-learn') return funinoEx(plan, 'learn');
+    if (b.type === 'funino-play' || b.type === 'final') return funinoEx(plan, 'play');
+    return EX[b.exerciseId];
+  }
   function blockTitle(plan, b) {
     if (b.type === 'station') return `Stationen – Runde ${b.round} von 3`;
-    if (b.type === 'final') { const ex = EX[(plan.stations || [])[2]]; return 'Abschlussspiel' + (ex ? ': ' + ex.name : ''); }
+    if (b.type === 'single') { const ex = blockEx(plan, b); return 'Station' + (ex ? ': ' + ex.name : ''); }
+    if (b.type === 'funino-learn' || b.type === 'funino-play') { const ex = blockEx(plan, b); return b.label + (ex ? ': ' + ex.name : ''); }
+    if (b.type === 'final') { const ex = blockEx(plan, b); return 'Abschlussspiel' + (ex ? ': ' + ex.name : ''); }
     if (b.type === 'ex') { const ex = EX[b.exerciseId]; return ex ? `${b.label}: ${ex.name}` : b.label; }
     return b.label;
   }
@@ -386,8 +411,14 @@
     const items = [];
     (plan.stations || []).forEach((id, i) => {
       const ex = EX[id];
-      if (ex) items.push({ key: 's' + i, cls: `st-${i + 1}`, title: `${ST_NUM[i]} ${ex.name}`, sub: matText(ex) || 'kein Material', note: ex.setup });
+      if (!ex) return;
+      const title = isSolo(plan) ? `🔁 Station: ${ex.name}` : `${ST_NUM[i]} ${ex.name}${i === 2 ? ' (Funino-Feld)' : ''}`;
+      items.push({ key: 's' + i, cls: isSolo(plan) ? 'st-1' : `st-${i + 1}`, title, sub: matText(ex) || 'kein Material', note: ex.setup });
     });
+    if (isSolo(plan)) {
+      const fp = funinoEx(plan, 'play') || funinoEx(plan, 'learn');
+      if (fp) items.push({ key: 'f', cls: 'st-funino', title: '🥅 Funino-Feld: 4 Minitore + Schusszonen', sub: matText(fp), note: fp.setup });
+    }
     const wb = plan.blocks.find((b) => b.type === 'ex' && EX[b.exerciseId]);
     if (wb) { const ex = EX[wb.exerciseId]; items.push({ key: 'w', cls: 'st-warm', title: `🔥 Aufwärmen: ${ex.name}`, sub: matText(ex) || 'kein Material', note: ex.setup }); }
     items.push({ key: 'x', cls: '', title: '⚽ Ballkiste offen, 🥤 Platz für Trinkflaschen', sub: '', note: '' });
@@ -419,6 +450,8 @@
     const cls = opts && opts.warm ? 'st-warm' : `st-${i + 1}`;
     const num = opts && opts.warm ? '🔥' : i + 1;
     const pill = opts && opts.warm ? '<span class="phase-pill warm">🔥 Aufwärmspiel</span>'
+      : opts && opts.solo ? '<span class="phase-pill station">Station · alle zusammen</span>'
+      : i === 2 && ex && ex.funino ? '<span class="phase-pill funino">Station 3 · Funino lernen – danach Funino 3:3</span>'
       : i === 2 ? '<span class="phase-pill final">Station 3 · Spielform, danach Abschlussspiel</span>' : `<span class="phase-pill station">Station ${i + 1}</span>`;
     const swap = opts && opts.warm ? `data-swap="${opts.blockIdx}"` : `data-swap-station="${i}"`;
     if (!ex) {
@@ -444,8 +477,35 @@
     </article>`;
   }
 
+  function funinoRules() {
+    return `<div class="rules-card"><b>🥅 Funino-Regeln</b><ul>${Generator.FUNINO_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>`;
+  }
+  function funinoCard(plan, which) {
+    const ex = funinoEx(plan, which);
+    const label = which === 'learn' ? `🎓 Funino lernen · Schritt ${ex && ex.funino ? ex.funino.step : '–'} von 4` : '⚽ Funino 3:3 spielen';
+    if (!ex) return `<article class="station st-funino"><div class="st-num">🥅</div><div class="st-body"><span class="phase-pill funino">${label}</span>
+      <p class="small">Ohne Minitore gibt es keine Funino-Übung.</p><button class="btn btn-sm" data-swap-funino="${which}">🔄 Neu suchen</button></div></article>`;
+    const miss = missingFor(ex, planMaterial(plan));
+    return `<article class="station st-funino">
+      <div class="st-num">🥅</div>
+      <div class="st-body"><span class="phase-pill funino">${label}</span>
+        <h3 class="st-name">${esc(ex.name)}</h3>
+        <p class="st-short">${esc(exShort(ex))}</p>
+        ${matIcons(ex, true)}
+        ${miss.length ? `<p class="small" style="color:var(--danger);margin:6px 0 0">⚠️ Braucht ${miss.map((m) => MAT[m] || m).join(', ')} – nicht ausgewählt.</p>` : ''}
+      </div>
+      <div class="st-anim">${animBox(ex, true)}</div>
+      <div class="st-actions">
+        <button class="btn btn-sm" data-ex="${ex.id}">📖 Details</button>
+        <button class="btn btn-sm" data-swap-funino="${which}">🔄 Tauschen</button>
+        <button class="fav ${isFav(ex.id) ? 'on' : ''}" data-fav="${ex.id}" aria-label="Favorit">★</button>
+      </div>
+    </article>`;
+  }
+
   function renderPlan(plan) {
     if (!plan.stations) return renderPlanLegacy(plan);
+    const solo = isSolo(plan);
     const groups = planGroups(plan);
     const kidsTotal = planKids(plan).length;
     const focusLabel = (AREAS.find((a) => a.key === plan.focus) || {}).label || '–';
@@ -456,12 +516,13 @@
       return `<div class="plan-line"><span class="pl-time">${s0}′</span><span class="pl-dot tl-${ph.cls}">${b.type === 'station' ? ST_NUM[b.round - 1] : ph.icon}</span><span class="pl-title">${esc(blockTitle(plan, b))}</span><span class="pl-min">${b.minutes}′</span></div>`;
     }).join('');
     const timeline = plan.blocks.map((b) => { const ph = blockPh(b); return `<span class="tl tl-${ph.cls}" style="flex:${b.minutes}">${b.type === 'station' ? ST_NUM[b.round - 1] : ph.icon}</span>`; }).join('');
+    const stB = plan.blocks.find((b) => b.type === 'station' || b.type === 'single');
     const warmIdx = plan.blocks.findIndex((b) => b.type === 'ex');
     const warm = warmIdx >= 0 ? EX[plan.blocks[warmIdx].exerciseId] : null;
-    const finalEx = EX[plan.stations[2]];
+    const finalEx = funinoEx(plan, 'play');
     const finalB = plan.blocks.find((b) => b.type === 'final');
     const mat = planMaterial(plan);
-    const conflicts = [warm].concat(plan.stations.map((id) => EX[id])).filter((ex) => ex && missingFor(ex, mat).length).length;
+    const conflicts = [warm, EX[plan.funinoLearn], EX[plan.funinoPlay]].concat(plan.stations.map((id) => EX[id])).filter((ex) => ex && missingFor(ex, mat).length).length;
     const isToday = plan.day <= todayIso();
     const startB = plan.blocks.find((b) => b.key === 'begruessung');
     const endB = plan.blocks.find((b) => b.key === 'verabschiedung');
@@ -473,6 +534,7 @@
       <div class="plan-head" style="margin-bottom:12px">
         <span class="tag ${plan.venue}">${VENUES[plan.venue]} · ${planMinutes(plan)}′</span>
         <span class="tag team-G1">G1${plan.withG2 ? ' + G2' : ''}</span>
+        <span class="tag">${solo ? '🧍 allein' : '🧍🧍 zu zweit'}</span>
         <span class="tag">👥 ${planCount(plan)}</span>
         <span class="tag">🎯 ${esc(focusLabel)}</span>
         <span class="small muted">${relDay(plan.day)}</span>
@@ -480,7 +542,7 @@
 
       <div class="card">
         <div class="timeline">${timeline}</div>
-        <div class="tl-legend"><span>0′</span><span>3 Stationen à ${plan.blocks.find((b) => b.type === 'station').minutes}′</span><span>${planMinutes(plan)}′</span></div>
+        <div class="tl-legend"><span>0′</span><span>${solo ? `1 Station ${stB ? stB.minutes : ''}′ + Funino` : `3 Stationen à ${stB ? stB.minutes : ''}′ + Funino`}</span><span>${planMinutes(plan)}′</span></div>
         <details class="plan-lines"><summary class="small" style="font-weight:700;margin-top:8px">Ablauf mit Uhrzeiten</summary>${lines}</details>
       </div>
 
@@ -489,8 +551,17 @@
 
       ${warmIdx >= 0 ? `<div class="card" style="border:2px solid var(--primary-2)"><b>Älterer Ablauf mit Aufwärmübung.</b><p class="small" style="margin:4px 0 8px">Neu: freies Training während des Aufbaus, danach direkt Stationen (längere Stationszeiten).</p>
         <button class="btn btn-primary btn-sm" data-act="regen-keep">Auf neuen Ablauf umstellen (Stationen bleiben)</button></div>
-        <h2 class="sec-h">🔥 Aufwärmspiel</h2>${stationCard(plan, warm, 0, { warm: true, blockIdx: warmIdx })}` : `<div class="card" style="border-left:6px solid var(--ph-aufbau)"><b>⚽ Freies Training & Aufbau · ${plan.blocks[0].minutes}′</b><p class="small" style="margin:4px 0 0">Kinder toben frei mit Ball, ihr baut in der Zeit die 3 Stationen auf.</p></div>`}
+        <h2 class="sec-h">🔥 Aufwärmspiel</h2>${stationCard(plan, warm, 0, { warm: true, blockIdx: warmIdx })}` : `<div class="card" style="border-left:6px solid var(--ph-aufbau)"><b>⚽ Freies Training & Aufbau · ${plan.blocks[0].minutes}′</b><p class="small" style="margin:4px 0 0">Kinder toben frei mit Ball, ${solo ? 'du baust in der Zeit die Station und das Funino-Feld auf' : 'ihr baut in der Zeit die 3 Stationen auf'}.</p></div>`}
 
+      ${solo ? `
+      <h2 class="sec-h">🔁 Station <span class="muted small">alle Kinder zusammen</span></h2>
+      ${stationCard(plan, EX[plan.stations[0]], 0, { solo: true })}
+      <h2 class="sec-h">🥅 Funino <span class="muted small">Lernweg Schritt ${plan.funinoStep || 1} von 4</span></h2>
+      ${funinoCard(plan, 'learn')}
+      ${funinoCard(plan, 'play')}
+      ${funinoRules()}
+      <p class="small muted">Bei mehr als 6 Kindern: 3 gegen 3, die anderen warten als Wechselkinder an der Seitenlinie (mit Ball-Aufgabe) und kommen nach jedem Tor rein.</p>
+      ` : `
       <h2 class="sec-h">🔁 3 Stationen <span class="muted small">Gruppen wechseln</span></h2>
       ${plan.stations.map((id, i) => stationCard(plan, EX[id], i)).join('')}
 
@@ -499,10 +570,10 @@
         ${rotationTable(plan, groups)}
       </div>
 
-      <div class="card final-card">
-        <h3 style="margin:0">🏆 Abschlussspiel · ${finalB ? finalB.minutes : ''}′</h3>
-        <p style="margin:6px 0 0">${finalEx ? `An <b>Station ③</b>: <b>${esc(finalEx.name)}</b> – alle Gruppen zusammen${planCount(plan) > 8 ? ' (bei vielen Kindern 2 Felder / Turnier)' : ''}.` : 'Spielform an Station ③.'}</p>
-      </div>
+      <h2 class="sec-h">🏆 Abschlussspiel · Funino ${finalB ? finalB.minutes + '′' : ''} <span class="muted small">auf dem Feld von Station ③</span></h2>
+      ${plan.funinoPlay ? funinoCard(plan, 'play') : `<div class="card final-card"><p style="margin:0">${finalEx ? `An <b>Station ③</b>: <b>${esc(finalEx.name)}</b> – alle zusammen.` : 'Spielform an Station ③.'}</p></div>`}
+      ${funinoRules()}
+      `}
 
       <div class="card">
         <h3>📣 Rufe</h3>
@@ -521,6 +592,8 @@
             <div class="small muted">${plan.attendees ? `<b style="color:var(--ok)">${plan.attendees.length} von ${kidsTotal} da</b>` : (isToday ? 'Heute ist Training – hake ab, wer da ist.' : 'Wird am Trainingstag abgehakt.')}</div></div>
           <button class="btn ${!plan.attendees && isToday ? 'btn-primary' : ''}" data-act="attendance">${plan.attendees ? 'Ändern' : 'Abhaken'}</button>
         </div>
+        <div class="row" style="margin-top:12px"><span class="small" style="flex:1">${solo ? '🧍 Du trainierst allein: 1 Station + Funino.' : '🧍🧍 Ihr seid zu zweit: 3 Stationen + Funino.'}</span>
+          <button class="btn btn-sm" data-act="switch-mode">${solo ? 'Wir sind zu zweit' : 'Ich bin allein'}</button></div>
         <label class="row" style="margin-top:12px;cursor:pointer"><input type="checkbox" id="planG2" ${plan.withG2 ? 'checked' : ''} style="width:22px;height:22px;accent-color:var(--primary-2)"> <span>Ich trainiere heute auch die <b>G2</b></span></label>
       </div>
       <details class="card">
@@ -635,12 +708,14 @@
     ui.focus = 'auto';
     ui.material = new Set(state.settings.material);
     ui.withG2 = false;
+    ui.mode = state.settings.lastMode || 'solo';
     rerender(); window.scrollTo(0, 0);
   }
 
   function generatePlan() {
     const expected = expectedIds({ withG2: ui.withG2 });
-    const plan = Generator.generate({ venue: ui.venue, attendees: expected, focus: ui.focus, state, count: expected.length || ui.guestCount, material: [...(ui.material || state.settings.material)] });
+    const plan = Generator.generate({ venue: ui.venue, attendees: expected, focus: ui.focus, state, count: expected.length || ui.guestCount, material: [...(ui.material || state.settings.material)], mode: ui.mode });
+    state.settings.lastMode = ui.mode;
     plan.day = ui.newDay || nextFreeDay();
     plan.attendees = null; // wird am Trainingstag abgehakt
     plan.withG2 = !!ui.withG2;
@@ -652,14 +727,20 @@
   }
 
   function regenPlan(plan) {
-    const fresh = Generator.generate({ venue: plan.venue, attendees: plan.attendees || expectedIds(plan), focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: [...planMaterial(plan)] });
-    Object.assign(plan, { stations: fresh.stations, blocks: fresh.blocks, level: fresh.level, focus: fresh.focus, autoFocus: fresh.autoFocus });
+    const fresh = Generator.generate({ venue: plan.venue, attendees: plan.attendees || expectedIds(plan), focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: [...planMaterial(plan)], mode: plan.mode });
+    Object.assign(plan, { mode: fresh.mode, funinoStep: fresh.funinoStep, funinoLearn: fresh.funinoLearn, funinoPlay: fresh.funinoPlay, stations: fresh.stations, blocks: fresh.blocks, level: fresh.level, focus: fresh.focus, autoFocus: fresh.autoFocus });
     save(); rerender(); toast('Neue Übungen');
   }
 
   function swapInPlan(plan, i) {
     const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds(plan), material: [...planMaterial(plan)] }); // blocks/stations sind dieselben Arrays
     return Generator.swap(view, i, state);
+  }
+  function swapFuninoInPlan(plan, which) {
+    const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds(plan), material: [...planMaterial(plan)] });
+    const ex = Generator.swapFunino(view, which, state);
+    plan.funinoLearn = view.funinoLearn; plan.funinoPlay = view.funinoPlay;
+    return ex;
   }
   function swapStationInPlan(plan, i) {
     const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds(plan), material: [...planMaterial(plan)] });
@@ -677,6 +758,9 @@
     (plan.stations || []).forEach((id, i) => {
       const ex = EX[id];
       if (!ex || missingFor(ex, mat).length) { swapStationInPlan(plan, i); n++; }
+    });
+    [['learn', 'funinoLearn'], ['play', 'funinoPlay']].forEach(([w, f]) => {
+      if (plan[f] && missingFor(EX[plan[f]], mat).length) { swapFuninoInPlan(plan, w); n++; }
     });
     save();
     return n;
@@ -1027,7 +1111,7 @@
       </div>
       ${list.map((s) => {
         const d = new Date(s.date);
-        const names = (s.stations || []).concat(s.blocks.map((b) => b.exerciseId)).filter((id) => id && EX[id]).map((id) => EX[id].name);
+        const names = (s.stations || []).concat([s.funinoLearn, s.funinoPlay], s.blocks.map((b) => b.exerciseId)).filter((id) => id && EX[id]).map((id) => EX[id].name);
         const sm = SMILEYS.find((x) => x[0] === s.rating);
         return `<div class="list-item" data-session="${s.id}">
           <div class="date-badge">${d.getDate()}<small>${d.toLocaleDateString('de-DE', { month: 'short' })}</small></div>
@@ -1055,10 +1139,10 @@
       <h3>Anwesend (${names.length || s.count || 0})</h3>
       <p class="small">${names.length ? esc(names.join(', ')) : '<span class="muted">keine Liste</span>'}</p>
       <h3>Ablauf</h3>
-      ${s.stations ? `<p>${s.stations.map((id, i) => EX[id] ? `${ST_NUM[i]} <a href="#" data-ex="${id}">${esc(EX[id].name)}</a>` : '').join('<br>')}</p>` : ''}
+      ${s.stations ? `<p>${s.stations.concat([s.funinoLearn, s.funinoPlay]).map((id, i) => EX[id] ? `${i < s.stations.length ? (isSolo(s) ? '🔁' : ST_NUM[i]) : '🥅'} <a href="#" data-ex="${id}">${esc(EX[id].name)}</a>` : '').filter(Boolean).join('<br>')}</p>` : ''}
       <ul style="padding-left:1.1rem">${s.blocks.map((b) => {
         const ex = EX[b.exerciseId];
-        return `<li><b>${b.minutes}′</b> ${esc(b.type === 'station' || b.type === 'final' ? blockTitle(s, b) : b.label)}${ex ? `: <a href="#" data-ex="${ex.id}">${esc(ex.name)}</a>` : ''}</li>`;
+        return `<li><b>${b.minutes}′</b> ${esc(b.type !== 'ex' ? blockTitle(s, b) : b.label)}${ex ? `: <a href="#" data-ex="${ex.id}">${esc(ex.name)}</a>` : ''}</li>`;
       }).join('')}</ul>
       <div class="row" style="margin-top:12px">
         <button class="btn btn-danger" id="sDel">Löschen</button><span class="spacer"></span>
@@ -1235,7 +1319,8 @@
     destroyAll(timer.ctrls);
     const b = plan.blocks[timer.idx];
     const next = plan.blocks[timer.idx + 1];
-    const type = b.type === 'ritual' ? (b.key === 'aufbau' ? 'arrive' : 'ritual') : b.type;
+    const type = b.type === 'ritual' ? (b.key === 'aufbau' ? 'arrive' : 'ritual') : (['single', 'funino-learn', 'funino-play', 'final'].includes(b.type) ? 'ex' : b.type);
+    const colorType = b.type === 'single' ? 'station' : (b.type.startsWith('funino') || (b.type === 'final' && plan.funinoPlay)) ? 'funino' : b.type === 'final' ? 'final' : type;
     const ph = blockPh(b);
     const total = planMinutes(plan);
     const elapsed = plan.blocks.slice(0, timer.idx).reduce((s, x) => s + x.minutes, 0);
@@ -1243,7 +1328,7 @@
     const groups = plan.stations ? planGroups(plan) : null;
     const nextRound = plan.blocks.slice(timer.idx + 1).find((x) => x.type === 'station');
     const moveHint = (round) => GROUPS.map((G, g) => `<span class="grp grp-${G.key} sm">${G.key}</span>→${ST_NUM[stationOf(g, round)]}`).join(' &nbsp; ');
-    el.dataset.type = type;
+    el.dataset.type = colorType;
     el.classList.toggle('paused', !timer.running);
 
     let core = '', details = '', typeLabel = ph.label, title = blockTitle(plan, b);
@@ -1273,11 +1358,14 @@
       core = `<div class="big-emoji">🥤</div><p class="timer-note" style="text-align:center">Alle trinken. Lob für die Gruppe!</p>
         ${nextRound ? `<div class="rot-switch">Danach Runde ${nextRound.round}: ${moveHint(nextRound.round)}</div>` : ''}`;
     } else {
-      const ex = type === 'final' ? EX[(plan.stations || [])[2]] : EX[b.exerciseId];
-      typeLabel = type === 'final' ? '🏆 Abschlussspiel' : (b.phase === 'aufwaermen' ? '🔥 Aufwärmen' : '⚽ Übung');
+      const ex = blockEx(plan, b);
+      const isFun = b.type.startsWith('funino') || (b.type === 'final' && ex && ex.funino);
+      typeLabel = b.type === 'single' ? '🔁 Station · alle zusammen' : b.type === 'funino-learn' ? `🎓 Funino lernen · Schritt ${ex && ex.funino ? ex.funino.step : ''}/4`
+        : b.type === 'funino-play' ? '🥅 ' + b.label : b.type === 'final' ? (isFun ? '🏆 Abschluss · Funino 3:3' : '🏆 Abschlussspiel') : (b.phase === 'aufwaermen' ? '🔥 Aufwärmen' : '⚽ Übung');
       title = ex ? ex.name : b.label;
       core = ex ? `<p class="ex-short-big">${esc(exShort(ex))}</p>
-          ${type === 'final' ? '<p class="timer-note">An Station ③ – alle Gruppen zusammen.</p>' : ''}
+          ${b.type === 'final' ? '<p class="timer-note">Auf dem Feld von Station ③ – alle zusammen.</p>' : ''}
+          ${isFun ? funinoRules() : ''}
           <ul class="timer-steps">${list((ex.steps || []).slice(0, 3))}</ul>
           <div class="timer-thumb">${animBox(ex, true)}</div>`
         : '<p class="timer-note">Keine Übung hinterlegt.</p>';
@@ -1407,6 +1495,16 @@
     const kt = t.closest('[data-kid-team]');
     if (kt) { ui.kidTeam = kt.dataset.kidTeam; rerender(); return; }
 
+    const md = t.closest('[data-mode]');
+    if (md) { ui.mode = md.dataset.mode; rerender(); return; }
+
+    const sf = t.closest('[data-swap-funino]');
+    if (sf) {
+      const ex = swapFuninoInPlan(planById(ui.openPlan), sf.dataset.swapFunino);
+      save(); rerender(); toast(ex ? `Funino: ${ex.name}` : 'Keine Alternative gefunden');
+      return;
+    }
+
     const ss = t.closest('[data-swap-station]');
     if (ss) {
       const ex = swapStationInPlan(planById(ui.openPlan), +ss.dataset.swapStation);
@@ -1467,9 +1565,16 @@
         if (pl && confirm(`Training am ${fmtDay(pl.day)} löschen?`)) { state.planned = state.planned.filter((p) => p.id !== pl.id); ui.openPlan = null; save(); rerender(); toast('Gelöscht'); }
         break;
       }
+      case 'switch-mode': {
+        const pl = planById(ui.openPlan);
+        if (pl && confirm(pl.mode === 'solo' ? 'Auf 3 Stationen (zu zweit) umstellen? Die Übungen werden neu vorgeschlagen.' : 'Auf 1 Station + Funino (allein) umstellen? Die Übungen werden neu vorgeschlagen.')) {
+          pl.mode = pl.mode === 'solo' ? 'team' : 'solo'; state.settings.lastMode = pl.mode; regenPlan(pl);
+        }
+        break;
+      }
       case 'regen-keep': {
         const pl = planById(ui.openPlan);
-        if (pl) { pl.blocks = Generator.TEMPLATES[pl.venue].blocks.map((x) => Object.assign({ exerciseId: null, phase: null, key: null }, x)); save(); rerender(); toast('Ablauf umgestellt'); }
+        if (pl) { pl.blocks = (pl.mode === 'solo' ? Generator.SOLO_TEMPLATES : Generator.TEMPLATES)[pl.venue].blocks.map((x) => Object.assign({ exerciseId: null, phase: null, key: null }, x)); save(); rerender(); toast('Ablauf umgestellt'); }
         break;
       }
       case 'fix-mat': { const pl = planById(ui.openPlan); const n = fixMaterial(pl); rerender(); toast(`${n} Übung(en) ersetzt`); break; }

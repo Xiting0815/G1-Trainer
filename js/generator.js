@@ -35,6 +35,46 @@
     },
   };
 
+  // Allein (1 Trainer): eine Station mit allen, danach Funino lernen + spielen
+  const SOLO_TEMPLATES = {
+    halle: {
+      label: 'Halle',
+      minutes: 60,
+      blocks: [
+        { type: 'ritual', key: 'aufbau', label: 'Freies Training & Aufbau', minutes: 7 },
+        { type: 'ritual', key: 'begruessung', label: 'Begrüßung & Ruf', minutes: 3 },
+        { type: 'single', label: 'Station (alle zusammen)', minutes: 15 },
+        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 3 },
+        { type: 'funino-learn', label: 'Funino lernen', minutes: 10 },
+        { type: 'funino-play', label: 'Funino 3:3 spielen', minutes: 19 },
+        { type: 'ritual', key: 'verabschiedung', label: 'Abschlusskreis & Ruf', minutes: 3 },
+      ],
+    },
+    draussen: {
+      label: 'Draußen',
+      minutes: 90,
+      blocks: [
+        { type: 'ritual', key: 'aufbau', label: 'Freies Training & Aufbau', minutes: 7 },
+        { type: 'ritual', key: 'begruessung', label: 'Begrüßung & Ruf', minutes: 3 },
+        { type: 'single', label: 'Station (alle zusammen)', minutes: 20 },
+        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 3 },
+        { type: 'funino-learn', label: 'Funino lernen', minutes: 15 },
+        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 3 },
+        { type: 'funino-play', label: 'Funino 3:3 spielen', minutes: 15 },
+        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 3 },
+        { type: 'funino-play', label: 'Funino-Turnier', minutes: 16 },
+        { type: 'ritual', key: 'verabschiedung', label: 'Abschlusskreis & Ruf', minutes: 5 },
+      ],
+    },
+  };
+
+  const FUNINO_RULES = [
+    'Tore zählen nur aus der Schusszone.',
+    'Ball im Aus: eindribbeln statt einwerfen.',
+    'Nach dem Tor: Wechselkind rein, Neustart von der Grundlinie.',
+    'Kein Torwart – alle spielen mit.',
+  ];
+
   // Station 1+2 = Hauptteil-Übungen, Station 3 = Spielform (wird auch das Abschlussspiel)
   const STATION_PHASES = ['hauptteil', 'hauptteil', 'abschluss'];
   const LIGHT = new Set(['baelle', 'leibchen', 'huetchen']); // Aufwärmen ohne großen Aufbau
@@ -142,7 +182,7 @@
     const recent = new Map();
     const done = state.sessions.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
     done.forEach((sess, i) =>
-      sess.blocks.map((b) => b.exerciseId).concat(sess.stations || []).forEach((id) => { if (id && !recent.has(id)) recent.set(id, i + 1); })
+      sess.blocks.map((b) => b.exerciseId).concat(sess.stations || [], [sess.funinoLearn, sess.funinoPlay]).forEach((id) => { if (id && !recent.has(id)) recent.set(id, i + 1); })
     );
     return {
       venue,
@@ -157,39 +197,62 @@
     };
   }
 
-  function pickStation(i, ctx, used) {
-    const groupCtx = Object.assign({}, ctx, { count: Math.ceil((ctx.count || 9) / 3) });
-    return pick(STATION_PHASES[i], i === 2 ? ctx : groupCtx, used);
+  const isFunino = (id) => { const ex = (window.EXERCISES || []).find((e) => e.id === id); return !!(ex && ex.funino); };
+
+  // Lernweg: alle 2 Trainings mit Funino eine Stufe weiter (1–4)
+  function funinoStep(state) {
+    const n = state.sessions.filter((s) => s.funinoLearn || s.funinoPlay || (s.stations || []).some(isFunino)).length;
+    return Math.min(4, 1 + Math.floor(n / 2));
   }
 
-  function generate({ venue, attendees, focus, state, count, material }) {
-    const tpl = TEMPLATES[venue];
+  function pickFunino(type, ctx, used) {
+    let list = (window.EXERCISES || []).filter((ex) => ex.funino && ex.venue.includes(ctx.venue) && !used.has(ex.id) && hasMaterial(ex, ctx.material));
+    const pref = list.filter((ex) => ex.funino.type === type);
+    if (pref.length) list = pref;
+    if (!list.length) return pick('abschluss', ctx, used);
+    const target = type === 'spiel' ? 4 : ctx.funinoStep || 1;
+    const scored = list.map((ex) => ({ ex, s: score(ex, ctx) - Math.abs(ex.funino.step - target) * 4 - (ex.funino.step > target ? 4 : 0) }))
+      .sort((a, b) => b.s - a.s).slice(0, 2);
+    return scored[Math.floor(Math.random() * scored.length)].ex;
+  }
+
+  function pickStation(i, ctx, used, mode) {
+    if (mode === 'solo') return pick('hauptteil', ctx, used);
+    if (i === 2) return pickFunino('lernen', ctx, used);
+    const groupCtx = Object.assign({}, ctx, { count: Math.ceil((ctx.count || 9) / 3) });
+    return pick(STATION_PHASES[i], groupCtx, used);
+  }
+
+  function generate({ venue, attendees, focus, state, count, material, mode }) {
+    mode = mode === 'solo' ? 'solo' : 'team';
+    const tpl = (mode === 'solo' ? SOLO_TEMPLATES : TEMPLATES)[venue];
     const ctx = buildContext({ venue, attendees, focus, state, count, material });
+    ctx.funinoStep = funinoStep(state);
     const used = new Set();
-    const stations = [0, 1, 2].map((i) => {
-      const ex = pickStation(i, ctx, used);
-      if (ex) used.add(ex.id);
-      return ex ? ex.id : null;
-    });
+    const take = (ex) => { if (ex) used.add(ex.id); return ex ? ex.id : null; };
+    const stations = (mode === 'solo' ? [0] : [0, 1, 2]).map((i) => take(pickStation(i, ctx, used, mode)));
+    const funinoLearn = mode === 'solo' ? take(pickFunino('lernen', ctx, used)) : null;
+    const funinoPlay = take(pickFunino('spiel', ctx, used));
     const blocks = tpl.blocks.map((b) => {
       const block = Object.assign({ exerciseId: null, phase: null, key: null }, b);
-      if (b.type === 'ex') {
-        const ex = pick(b.phase, Object.assign({}, ctx, { light: true }), used);
-        if (ex) { block.exerciseId = ex.id; used.add(ex.id); }
-      }
+      if (b.type === 'final') block.label = 'Abschlussspiel: Funino 3:3';
       return block;
     });
     return {
       id: Store.uid(),
       date: new Date().toISOString(),
       venue,
+      mode,
       minutes: tpl.minutes,
       attendees: attendees.slice(),
       focus: ctx.focus,
       autoFocus: ctx.autoFocus,
       level: ctx.level,
       material: [...ctx.material],
+      funinoStep: ctx.funinoStep,
       stations,
+      funinoLearn,
+      funinoPlay,
       blocks,
       rating: 0,
       note: '',
@@ -197,11 +260,13 @@
   }
 
   function usedIds(plan) {
-    return new Set(plan.blocks.map((b) => b.exerciseId).concat(plan.stations || []).filter(Boolean));
+    return new Set(plan.blocks.map((b) => b.exerciseId).concat(plan.stations || [], [plan.funinoLearn, plan.funinoPlay]).filter(Boolean));
   }
 
   function planCtx(plan, state) {
-    return buildContext({ venue: plan.venue, attendees: plan.attendees, focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: plan.material });
+    const ctx = buildContext({ venue: plan.venue, attendees: plan.attendees, focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: plan.material });
+    ctx.funinoStep = plan.funinoStep || funinoStep(state);
+    return ctx;
   }
 
   function swap(plan, index, state) {
@@ -214,10 +279,17 @@
 
   function swapStation(plan, i, state) {
     if (!plan.stations) return null;
-    const ex = pickStation(i, planCtx(plan, state), usedIds(plan));
+    const ex = pickStation(i, planCtx(plan, state), usedIds(plan), plan.mode);
     plan.stations[i] = ex ? ex.id : null;
     return ex;
   }
 
-  window.Generator = { TEMPLATES, RITUALS, STATION_PHASES, generate, swap, swapStation, hasMaterial, avgRatings, targetLevel, weakestArea };
+  // which: 'learn' | 'play'
+  function swapFunino(plan, which, state) {
+    const ex = pickFunino(which === 'learn' ? 'lernen' : 'spiel', planCtx(plan, state), usedIds(plan));
+    plan[which === 'learn' ? 'funinoLearn' : 'funinoPlay'] = ex ? ex.id : null;
+    return ex;
+  }
+
+  window.Generator = { TEMPLATES, SOLO_TEMPLATES, FUNINO_RULES, RITUALS, STATION_PHASES, funinoStep, generate, swap, swapStation, swapFunino, hasMaterial, avgRatings, targetLevel, weakestArea };
 })();

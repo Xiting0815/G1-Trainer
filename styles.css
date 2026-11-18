@@ -380,3 +380,17 @@ td.st-1 { background: var(--st-1); } td.st-2 { background: var(--st-2); } td.st-
 .timer-progress i.tl-aufbau { background: var(--ph-aufbau); } .timer-progress i.tl-ritual { background: var(--ph-ritual); }
 .timer-progress i.tl-warm { background: var(--ph-warm); } .timer-progress i.tl-station { background: var(--ph-station); }
 .timer-progress i.tl-pause { background: var(--ph-pause); } .timer-progress i.tl-final { background: var(--ph-final); }
+
+/* ===== Funino ===== */
+:root { --ph-funino: #059669; }
+.tl-funino { background: var(--ph-funino); }
+.timer-progress i.tl-funino { background: var(--ph-funino); }
+.phase-pill.funino { --pc: var(--ph-funino); }
+.station.st-funino { --c: var(--ph-funino); }
+.setup-check .st-funino { --c: var(--ph-funino); }
+.timer[data-type="funino"] { --tc: #047857; }
+.rules-card { background: #ecfdf5; color: #064e3b; border: 2px solid #059669; border-radius: 14px; padding: 12px 14px; margin: 10px 0; }
+.rules-card ul { margin: 6px 0 0; padding-left: 1.2rem; }
+.rules-card li { margin-bottom: 4px; font-weight: 600; }
+@media (prefers-color-scheme: dark) { .rules-card { background: #052e22; color: #a7f3d0; } }
+.timer .rules-card { background: #ecfdf5; color: #064e3b; font-size: 1.05rem; }
