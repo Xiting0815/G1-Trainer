@@ -114,8 +114,11 @@
       areas.forEach((k) => (sum[k] = 3));
       return sum;
     }
-    kids.forEach((kid) => areas.forEach((k) => (sum[k] += (kid.ratings && kid.ratings[k]) || 3)));
-    areas.forEach((k) => (sum[k] = sum[k] / kids.length));
+    // nur bewertete Kinder zählen; ohne Bewertungen neutral 3
+    areas.forEach((k) => {
+      const vals = kids.map((kid) => kid.ratings && kid.ratings[k]).filter(Boolean);
+      sum[k] = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 3;
+    });
     return sum;
   }
 
@@ -157,7 +160,7 @@
   // Streng: nur Übungen, für die ALLES Material vorhanden ist.
   function candidates(phase, ctx, exclude) {
     return (window.EXERCISES || []).filter(
-      (ex) => ex.phase === phase && ex.venue.includes(ctx.venue) && !exclude.has(ex.id) && hasMaterial(ex, ctx.material)
+      (ex) => !ex.retired && ex.phase === phase && ex.venue.includes(ctx.venue) && !exclude.has(ex.id) && hasMaterial(ex, ctx.material)
     );
   }
 
@@ -206,7 +209,7 @@
   }
 
   function pickFunino(type, ctx, used) {
-    let list = (window.EXERCISES || []).filter((ex) => ex.funino && ex.venue.includes(ctx.venue) && !used.has(ex.id) && hasMaterial(ex, ctx.material));
+    let list = (window.EXERCISES || []).filter((ex) => ex.funino && !ex.retired && ex.venue.includes(ctx.venue) && !used.has(ex.id) && hasMaterial(ex, ctx.material));
     const pref = list.filter((ex) => ex.funino.type === type);
     if (pref.length) list = pref;
     if (!list.length) return pick('abschluss', ctx, used);
@@ -223,11 +226,11 @@
     return pick(STATION_PHASES[i], groupCtx, used);
   }
 
-  function generate({ venue, attendees, focus, state, count, material, mode }) {
+  function generate({ venue, attendees, focus, state, count, material, mode, funinoStep: stepOverride }) {
     mode = mode === 'solo' ? 'solo' : 'team';
     const tpl = (mode === 'solo' ? SOLO_TEMPLATES : TEMPLATES)[venue];
     const ctx = buildContext({ venue, attendees, focus, state, count, material });
-    ctx.funinoStep = funinoStep(state);
+    ctx.funinoStep = stepOverride || funinoStep(state);
     const used = new Set();
     const take = (ex) => { if (ex) used.add(ex.id); return ex ? ex.id : null; };
     const stations = (mode === 'solo' ? [0] : [0, 1, 2]).map((i) => take(pickStation(i, ctx, used, mode)));
