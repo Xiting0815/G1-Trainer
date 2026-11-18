@@ -3,22 +3,22 @@
 Trainings-App für die Bambini (G-Jugend) nach DFB-Vorgaben – für Handy und Tablet, funktioniert offline.
 
 ## Funktionen
-- **Training vorschlagen** – Halle (60 Min) oder draußen (90 Min), Aufbau nach der DFB-Bambini-Spielstunde
-  (Begrüßung → Aktivierung → Spielphase 1 → Zwischenblock → Spielphase 2 → Abschlusskreis, draußen mit Trinkpausen & Freispiel).
-  Der Vorschlag berücksichtigt Anwesenheit, Leistungsstand, Schwerpunkt, vorhandenes Material, Favoriten und
-  vermeidet Übungen der letzten Trainings. Jede Übung lässt sich einzeln tauschen.
-- **53 Übungen** (25 Halle, 28 draußen) mit animierten Skizzen (Spieler als farbige Punkte, Hütchen, Tore, Bänke, Matten …).
-- **Kinderliste** – Name, Alter, Leistung in 4 Bereichen (Ballgefühl, Koordination, Laufen, Sozial) mit 1–5 Sternen + Notizen.
-- **Anwesenheit**, **Verlauf** mit Bewertung und Notiz, **Favoriten**.
-- **Trainingstimer** mit Signalton/Vibration, Bildschirm bleibt an.
-- **Export/Import** der Daten (z. B. Handy → Tablet). Alle Daten bleiben lokal auf dem Gerät.
+- **Training im Voraus planen** – Halle (60′) oder draußen (90′), Datum (Standard: nächster freier Mittwoch).
+  - *Allein:* freies Training & Aufbau → Begrüßung mit Ruf → 1 Station mit allen → Funino lernen → Funino 3:3 → Abschlusskreis mit Ruf.
+  - *Zu zweit:* 3 Stationen im Wechsel (Gruppen A/B/C, ausgeglichen, per Antippen verschiebbar) + Funino-Abschluss.
+  - Berücksichtigt Material (streng), Leistungsstand, Favoriten, zuletzt gemachte Übungen; Funino-Lernweg in 4 Stufen.
+  - Packliste mit Mengen, Aufbau-Checkliste, „Heute im Blick“, Geburtstage, „♻️ Wie letztes Mal“.
+- **Trainingsmodus (Timer)** – große Uhr, Phasenfarben, Rufe groß, Stationsrotation, lautes Signal mit Vorwarnung,
+  Display bleibt an, **Stand übersteht Neuladen/App-Wechsel**, Anwesenheit & neues Kind direkt im Timer.
+- **Kinder** – Name, Jahrgang, G1/G2, spielberechtigt, Leistung in 4 Bereichen (1–5) mit **Entwicklungs-Historie**,
+  datierte Notizen, Anwesenheitsquote; Schnell-Bewertung beim Abschließen eines Trainings.
+- **56 Übungen** (Halle, draußen, Funino-Lernweg, Extras) mit animierten Skizzen.
+- **Daten** bleiben auf dem Gerät: Sicherung/Kinderliste teilen (WhatsApp, Mail), automatische Sicherung vor Import/Löschen.
 
 ## Aktivieren (GitHub Pages)
-1. Repository → **Settings → Pages**
-2. *Source*: **Deploy from a branch**, Branch **main**, Ordner **/ (root)** → Save
-3. Nach 1–2 Minuten läuft die App unter `https://xiting0815.github.io/G1-Trainer/`
-4. Auf dem Handy öffnen → *Teilen → Zum Home-Bildschirm* (iPhone) bzw. *⋮ → App installieren* (Android).
+Settings → Pages → *Deploy from a branch* → **main** / **(root)**. App: `https://xiting0815.github.io/G1-Trainer/`
+→ auf dem Handy „Zum Home-Bildschirm“.
 
 ## Technik
-Reines HTML/CSS/JavaScript ohne Build. `data/` enthält die Übungen (Format: `docs/SCHEMA.md`),
-`docs/DFB-KONZEPT.md` die Recherche zu den DFB-Vorgaben. Nach Änderungen an Dateien `VERSION` in `sw.js` erhöhen.
+HTML/CSS/JavaScript ohne Build. `data/` = Übungen (Format `docs/SCHEMA.md`, `retired: true` blendet aus),
+`docs/DFB-KONZEPT.md` = DFB-Recherche. Nach Änderungen `VERSION` in `sw.js` erhöhen.

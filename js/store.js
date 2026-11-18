@@ -327,8 +327,8 @@
     KEY, AREAS, AREA_KEYS, MATERIAL,
     load, save, uid, exportJSON, exportKidsJSON, importJSON, isKidsFile, reset,
     backup, hasBackup, backupInfo, restoreBackup, setRatings, normKid, requestPersist,
-    get state() { return state; },
-    get loadProblem() { return loadProblem; },
   });
+  Object.defineProperty(api, 'state', { get: () => state });
+  Object.defineProperty(api, 'loadProblem', { get: () => loadProblem });
   window.Store = api;
 })();

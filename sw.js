@@ -1,5 +1,5 @@
 /* Service Worker: macht die App offline nutzbar. Bei Änderungen VERSION erhöhen. */
-const VERSION = 'g1-trainer-v9';
+const VERSION = 'g1-trainer-v10';
 const ASSETS = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './js/app.js', './js/store.js', './js/generator.js', './js/animator.js', './js/keepawake.js', './js/dfb-info.js',

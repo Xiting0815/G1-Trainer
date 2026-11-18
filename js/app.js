@@ -876,6 +876,15 @@
         <button class="btn btn-sm btn-ghost" data-aset="none">Keine</button></div>
       ${kids.length ? groups.map(([t, ks]) => `<h3 style="margin:14px 0 8px">${t}</h3><div class="attend">${ks.map(item).join('')}</div>`).join('') : '<p class="muted">Noch keine Kinder angelegt.</p>'}
       <p class="small muted" style="margin-top:10px"><span class="tag ns">n. s.</span> = nicht spielberechtigt</p>
+      <details class="card" id="aNewBox" style="padding:12px">
+        <summary style="font-weight:700;cursor:pointer">＋ Neues Kind (z. B. Schnuppertraining)</summary>
+        <div class="field" style="margin-top:10px"><input class="input" id="aNewName" placeholder="Vorname Nachname" autocomplete="off"></div>
+        <div class="row" style="flex-wrap:nowrap">
+          <select class="input" id="aNewYear" style="flex:1"><option value="">Jahrgang …</option>${Array.from({ length: 9 }, (_, i) => new Date().getFullYear() - 2 - i).map((y) => `<option value="${y}">${y}</option>`).join('')}</select>
+          <div class="seg" id="aNewElig" style="flex:1.4"><button type="button" data-elig="1">✅ spielb.</button><button type="button" data-elig="0">⛔ nicht</button></div>
+        </div>
+        <button class="btn" id="aNewAdd" style="margin-top:10px;width:100%">＋ Hinzufügen & als anwesend abhaken</button>
+      </details>
       <button class="btn btn-primary btn-big" id="aDone" style="margin-top:8px">${finishAfter ? '✅ Speichern & Training abschließen' : 'Fertig'}</button>
     `, (root) => {
       const sync = () => {
@@ -895,6 +904,26 @@
         if (v === 'all') kids.forEach((k) => set.add(k.id));
         else if (v !== 'none') kids.filter((k) => yearOf(k) === +v).forEach((k) => set.add(k.id));
         sync();
+      });
+      let newElig = null;
+      root.querySelector('#aNewElig').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-elig]'); if (!b) return;
+        newElig = b.dataset.elig === '1';
+        root.querySelectorAll('#aNewElig button').forEach((x) => x.classList.toggle('on', x === b));
+      });
+      root.querySelector('#aNewAdd').addEventListener('click', () => {
+        const name = root.querySelector('#aNewName').value.trim();
+        const year = +root.querySelector('#aNewYear').value;
+        if (!name) { alert('Bitte einen Namen eingeben.'); return; }
+        if (!year) { alert('Bitte den Jahrgang wählen.'); return; }
+        if (newElig === null) { alert('Bitte auswählen, ob das Kind spielberechtigt ist.'); return; }
+        const kid = Store.normKid({ id: Store.uid(), name, year, eligible: newElig, active: true });
+        // Kind soll in diesem Training erscheinen, auch wenn es vom Jahrgang her G2 wäre
+        if (teamOf(kid) === 'G2' && !plan.withG2) kid.team = 'G1';
+        state.kids.push(kid);
+        set.add(kid.id); plan.attendees = [...set]; save();
+        toast(`${kid.name} angelegt und abgehakt`);
+        openAttendance(plan, finishAfter, onDone);
       });
       root.querySelector('#aDone').addEventListener('click', () => {
         plan.attendees = [...set]; save(); closeModal();
@@ -1042,6 +1071,7 @@
       ${chips}
       ${overview}
       ${kids.length ? list : allKids.length ? `<div class="card empty"><p>Keine Kinder für diesen Filter.</p></div>` : `<div class="card empty"><div class="big">👧🧒</div><p>Noch keine Kinder eingetragen.<br>Tipp: Kinderliste vom 2. Trainer unter „Mehr → Importieren“.</p><button class="btn btn-primary" data-act="kid-new">Erstes Kind anlegen</button></div>`}
+      ${allKids.length ? '<button class="btn btn-big" data-act="kid-new" style="margin-top:16px">＋ Kind manuell anlegen</button>' : ''}
       ${inactive.length ? `<details style="margin-top:20px"><summary class="small" style="font-weight:700;cursor:pointer">Inaktiv (${inactive.length})</summary><div class="grid grid-2" style="margin-top:10px">${inactive.map((k) => kidRow(k)).join('')}</div></details>` : ''}
     `;
   }
@@ -1659,7 +1689,7 @@
     updateAwake(window.KeepAwake ? KeepAwake.status() : false);
     el.querySelector('#tAwake').onclick = () => requestWake();
     el.querySelector('#tClose').onclick = () => { if (confirm('Timer schließen? Der Stand bleibt gespeichert – du kannst jederzeit fortsetzen.')) { closeTimer(false); rerender(); } };
-    el.querySelector('#tAtt').onclick = () => openAttendance(plan, false, () => { drawTimer(); });
+    el.querySelector('#tAtt').onclick = () => { if (!plan.attendees) { plan.attendees = expectedIds(plan); save(); } openAttendance(plan, false, () => { drawTimer(); }); };
     const sw = el.querySelector('#tSwap');
     if (sw) sw.onclick = () => {
       const ex = b.type === 'single' ? swapStationInPlan(plan, 0) : swapFuninoInPlan(plan, b.type === 'funino-learn' ? 'learn' : 'play');
