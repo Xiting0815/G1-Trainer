@@ -1,41 +1,57 @@
 /* Trainingsgenerator: stellt aus der Übungsbibliothek eine Einheit nach DFB-Bambini-Aufbau zusammen. */
 (function () {
   // Aufbau der Einheiten (siehe docs/DFB-KONZEPT.md)
+  // Stationsmodell: Aufbau von 3 Stationen in der ersten Phase, Gruppen A/B/C rotieren.
+  //  type 'station' = Stationsrunde (round 1–3), type 'final' = Abschlussspiel an Station 3
   const TEMPLATES = {
     halle: {
       label: 'Halle',
       minutes: 60,
+      stationMinutes: 9,
       blocks: [
-        { type: 'ritual', key: 'begruessung', label: 'Ankommen & Begrüßung', minutes: 5 },
-        { type: 'ex', phase: 'aufwaermen', label: 'Aktivierung / Spielgeschichte', minutes: 10 },
-        { type: 'ex', phase: 'hauptteil', label: 'Spielphase 1', minutes: 15 },
-        { type: 'ex', phase: 'hauptteil', label: 'Zwischenblock', minutes: 10 },
-        { type: 'ex', phase: 'abschluss', label: 'Spielphase 2 (2:2 auf Minitore)', minutes: 15 },
-        { type: 'ritual', key: 'verabschiedung', label: 'Abschlusskreis & Ritual', minutes: 5 },
+        { type: 'ritual', key: 'aufbau', label: 'Ankommen & Aufbau', minutes: 10 },
+        { type: 'ritual', key: 'begruessung', label: 'Begrüßung & Ruf', minutes: 3 },
+        { type: 'ex', phase: 'aufwaermen', label: 'Aufwärmspiel', minutes: 7 },
+        { type: 'station', round: 1, label: 'Stationen – Runde 1', minutes: 9 },
+        { type: 'station', round: 2, label: 'Stationen – Runde 2', minutes: 9 },
+        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 3 },
+        { type: 'station', round: 3, label: 'Stationen – Runde 3', minutes: 9 },
+        { type: 'final', label: 'Abschlussspiel', minutes: 7 },
+        { type: 'ritual', key: 'verabschiedung', label: 'Abschlusskreis & Ruf', minutes: 3 },
       ],
     },
     draussen: {
       label: 'Draußen',
       minutes: 90,
+      stationMinutes: 13,
       blocks: [
-        { type: 'ritual', key: 'begruessung', label: 'Ankommen & Begrüßung', minutes: 5 },
-        { type: 'ex', phase: 'aufwaermen', label: 'Tummelphase', minutes: 10 },
-        { type: 'ex', phase: 'aufwaermen', label: 'Aktivierung / Spielgeschichte', minutes: 10 },
-        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 5 },
-        { type: 'ex', phase: 'hauptteil', label: 'Spielphase 1', minutes: 20 },
-        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 5 },
-        { type: 'ex', phase: 'hauptteil', label: 'Zwischenblock', minutes: 10 },
-        { type: 'ex', phase: 'abschluss', label: 'Spielphase 2 (2:2/3:3 Mini-Festival)', minutes: 15 },
-        { type: 'ritual', key: 'freispiel', label: 'Freispiel / Wunschspiel', minutes: 5 },
-        { type: 'ritual', key: 'verabschiedung', label: 'Abschlusskreis & Ritual', minutes: 5 },
+        { type: 'ritual', key: 'aufbau', label: 'Ankommen & Aufbau', minutes: 10 },
+        { type: 'ritual', key: 'begruessung', label: 'Begrüßung & Ruf', minutes: 3 },
+        { type: 'ex', phase: 'aufwaermen', label: 'Aufwärmspiel', minutes: 10 },
+        { type: 'station', round: 1, label: 'Stationen – Runde 1', minutes: 13 },
+        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 3 },
+        { type: 'station', round: 2, label: 'Stationen – Runde 2', minutes: 13 },
+        { type: 'pause', key: 'trinken', label: 'Trinkpause', minutes: 3 },
+        { type: 'station', round: 3, label: 'Stationen – Runde 3', minutes: 13 },
+        { type: 'final', label: 'Abschlussspiel', minutes: 17 },
+        { type: 'ritual', key: 'verabschiedung', label: 'Abschlusskreis & Ruf', minutes: 5 },
       ],
     },
   };
 
+  // Station 1+2 = Hauptteil-Übungen, Station 3 = Spielform (wird auch das Abschlussspiel)
+  const STATION_PHASES = ['hauptteil', 'hauptteil', 'abschluss'];
+  const LIGHT = new Set(['baelle', 'leibchen', 'huetchen']); // Aufwärmen ohne großen Aufbau
+
   const RITUALS = {
+    aufbau: {
+      title: 'Ankommen & Aufbau',
+      text: 'Trainer bauen die 3 Stationen auf (Liste unten). Kinder: Ballkiste offen, freies Dribbeln und Schießen.',
+      tips: ['Eltern beim Aufbau einbinden.', 'Jedes Kind beim Ankommen mit Namen begrüßen.'],
+    },
     begruessung: {
-      title: 'Begrüßung & Ritual',
-      text: 'Alle Kinder im Kreis begrüßen, jedes Kind beim Namen nennen. Kurz erzählen, was heute passiert (eine Geschichte, z. B. „Heute sind wir Piraten“). Gemeinsamer Teamruf.',
+      title: 'Begrüßung & Ruf',
+      text: 'Kreis bilden, Hände in die Mitte. Kurz die Geschichte des Tages erzählen, dann gemeinsam rufen.',
       tips: ['Auf Augenhöhe gehen (hinknien).', 'Neue Kinder vorstellen.', 'Trinkflaschen an einen festen Platz stellen.'],
     },
     trinken: {
@@ -49,8 +65,8 @@
       tips: ['Abstimmen per Handzeichen – Kinder entscheiden mit.', 'Kein Coaching, nur Spaß.'],
     },
     verabschiedung: {
-      title: 'Abschlusskreis',
-      text: 'Im Kreis zusammenkommen: Was war heute toll? Jedes Kind bekommt ein Abklatschen. Teamruf und Verabschiedung bis zum nächsten Mal.',
+      title: 'Abschlusskreis & Ruf',
+      text: 'Kreis bilden: Was war heute toll? Jedes Kind abklatschen, dann gemeinsam rufen.',
       tips: ['Jedes Kind individuell loben.', 'Gemeinsam Material einsammeln – das macht Kindern Spaß.'],
     },
   };
@@ -96,6 +112,7 @@
     if (ctx.count && ctx.count < min) s -= 4;
     if (ctx.count && ctx.count > max) s -= 1.5;
     if (ex.venue.length === 1 && ex.venue[0] === ctx.venue) s += 1; // ortstypische Übungen bevorzugen
+    if (ctx.light && (ex.material || []).every((m) => LIGHT.has(m))) s += 4; // Aufwärmen ohne Aufbau
     return s + Math.random() * 3;
   }
 
@@ -129,7 +146,7 @@
     const recent = new Map();
     const done = state.sessions.slice().sort((a, b) => b.date.localeCompare(a.date)).slice(0, 4);
     done.forEach((sess, i) =>
-      sess.blocks.forEach((b) => { if (b.exerciseId && !recent.has(b.exerciseId)) recent.set(b.exerciseId, i + 1); })
+      sess.blocks.map((b) => b.exerciseId).concat(sess.stations || []).forEach((id) => { if (id && !recent.has(id)) recent.set(id, i + 1); })
     );
     return {
       venue,
@@ -144,14 +161,24 @@
     };
   }
 
+  function pickStation(i, ctx, used) {
+    const groupCtx = Object.assign({}, ctx, { count: Math.ceil((ctx.count || 9) / 3) });
+    return pick(STATION_PHASES[i], i === 2 ? ctx : groupCtx, used);
+  }
+
   function generate({ venue, attendees, focus, state, count, material }) {
     const tpl = TEMPLATES[venue];
     const ctx = buildContext({ venue, attendees, focus, state, count, material });
     const used = new Set();
+    const stations = [0, 1, 2].map((i) => {
+      const ex = pickStation(i, ctx, used);
+      if (ex) used.add(ex.id);
+      return ex ? ex.id : null;
+    });
     const blocks = tpl.blocks.map((b) => {
-      const block = { type: b.type, label: b.label, minutes: b.minutes, phase: b.phase || null, key: b.key || null, exerciseId: null };
+      const block = Object.assign({ exerciseId: null, phase: null, key: null }, b);
       if (b.type === 'ex') {
-        const ex = pick(b.phase, ctx, used);
+        const ex = pick(b.phase, Object.assign({}, ctx, { light: true }), used);
         if (ex) { block.exerciseId = ex.id; used.add(ex.id); }
       }
       return block;
@@ -166,21 +193,35 @@
       autoFocus: ctx.autoFocus,
       level: ctx.level,
       material: [...ctx.material],
+      stations,
       blocks,
       rating: 0,
       note: '',
     };
   }
 
+  function usedIds(plan) {
+    return new Set(plan.blocks.map((b) => b.exerciseId).concat(plan.stations || []).filter(Boolean));
+  }
+
+  function planCtx(plan, state) {
+    return buildContext({ venue: plan.venue, attendees: plan.attendees, focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: plan.material });
+  }
+
   function swap(plan, index, state) {
     const block = plan.blocks[index];
     if (!block || block.type !== 'ex') return null;
-    const ctx = buildContext({ venue: plan.venue, attendees: plan.attendees, focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: plan.material });
-    const used = new Set(plan.blocks.map((b) => b.exerciseId).filter(Boolean));
-    const ex = pick(block.phase, ctx, used);
+    const ex = pick(block.phase, Object.assign(planCtx(plan, state), { light: true }), usedIds(plan));
     block.exerciseId = ex ? ex.id : null;
     return ex;
   }
 
-  window.Generator = { TEMPLATES, RITUALS, generate, swap, hasMaterial, avgRatings, targetLevel, weakestArea };
+  function swapStation(plan, i, state) {
+    if (!plan.stations) return null;
+    const ex = pickStation(i, planCtx(plan, state), usedIds(plan));
+    plan.stations[i] = ex ? ex.id : null;
+    return ex;
+  }
+
+  window.Generator = { TEMPLATES, RITUALS, STATION_PHASES, generate, swap, swapStation, hasMaterial, avgRatings, targetLevel, weakestArea };
 })();

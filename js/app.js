@@ -29,6 +29,8 @@
     exFav: false,
     exSearch: '',
     kidYear: 'alle',
+    kidTeam: 'alle',
+    withG2: false,
     kidElig: 'alle',
     openPlan: null,
     newPlan: false,
@@ -208,10 +210,30 @@
   }
   const plannedSorted = () => state.planned.slice().sort((a, b) => a.day.localeCompare(b.day));
   const planById = (id) => state.planned.find((p) => p.id === id);
-  const expectedIds = () => activeKids().map((k) => k.id);
-  const planCount = (plan) => (plan.attendees ? plan.attendees.length : (expectedIds().length || plan.count || 0));
+  // G1/G2: Standard nach Jahrgang (Jahrgang <= g1Year = G1), pro Kind überschreibbar
+  const g1Year = () => +(state.settings.g1Year || 2020);
+  const teamOf = (k) => k.team || (yearOf(k) && yearOf(k) > g1Year() ? 'G2' : 'G1');
+  const planKids = (plan) => activeKids().filter((k) => teamOf(k) === 'G1' || (plan && plan.withG2));
+  const expectedIds = (plan) => planKids(plan).map((k) => k.id);
+  const planCount = (plan) => (plan.attendees ? plan.attendees.length : (expectedIds(plan).length || plan.count || 0));
+
+  // Gruppen A/B/C – homogen nach Jahrgang und Leistung (DFB: nach Entwicklungsstand)
+  const GROUPS = [{ key: 'A', color: '#ef4444', name: 'Rot' }, { key: 'B', color: '#3b82f6', name: 'Blau' }, { key: 'C', color: '#eab308', name: 'Gelb' }];
+  function planGroups(plan) {
+    const ids = plan.attendees || expectedIds(plan);
+    const kids = ids.map(kidById).filter(Boolean)
+      .sort((a, b) => (yearOf(a) || 0) - (yearOf(b) || 0) || kidAvg(b) - kidAvg(a));
+    const out = [[], [], []];
+    const size = Math.ceil(kids.length / 3) || 0;
+    kids.forEach((k, i) => out[Math.min(2, Math.floor(i / (size || 1)))].push(k));
+    return out;
+  }
+  // Runde r (1–3): Gruppe g steht an Station (g + r - 1) % 3
+  const stationOf = (g, round) => (g + round - 1) % 3;
   const isEligible = (k) => k.eligible !== false;
 
+  const chantStart = () => state.settings.chantStart || 'Alle zusammen:\nEins, zwei, drei –\nHochstadt ist dabei!';
+  const chantEnd = () => state.settings.chantEnd || 'Trainer: Wer sind wir?\nAlle: HOCHSTADT!\nTrainer: Und welche Farbe?\nAlle: LILA!';
   const planMaterial = (plan) => new Set(plan.material || state.settings.material);
   const missingFor = (ex, mat) => (ex.material || []).filter((m) => !mat.has(m));
 
@@ -261,7 +283,7 @@
   }
 
   function renderNewPlan() {
-    const kids = activeKids();
+    const kids = planKids({ withG2: ui.withG2 });
     const tplH = Generator.TEMPLATES.halle, tplD = Generator.TEMPLATES.draussen;
     const avg = Generator.avgRatings(kids);
     const weakLabel = AREAS.find((a) => a.key === Generator.weakestArea(avg)).label;
@@ -294,6 +316,10 @@
         <p class="small muted">Es werden nur Übungen vorgeschlagen, für die alles hier Ausgewählte reicht. Vorauswahl änderst du unter „Mehr“.</p>
         ${materialChips(ui.material, 'data-pmat')}
         ${['baelle', 'huetchen'].filter((m) => !ui.material.has(m)).map((m) => `<p class="small" style="color:var(--warn);margin-top:8px">⚠️ Ohne ${MAT[m]} gibt es kaum passende Übungen.</p>`).join('')}
+      </div>
+      <div class="card">
+        <label class="row" style="cursor:pointer"><input type="checkbox" id="pG2" ${ui.withG2 ? 'checked' : ''} style="width:24px;height:24px;accent-color:var(--primary-2)">
+          <span><b>Ich trainiere auch die G2</b><br><span class="small muted">Sonst wird nur für die G1 geplant.</span></span></label>
       </div>
       <div class="card">
         <h3>👥 Kinder</h3>
@@ -408,14 +434,16 @@
     ui.venue = defaultVenueFor(ui.newDay);
     ui.focus = 'auto';
     ui.material = new Set(state.settings.material);
+    ui.withG2 = false;
     rerender(); window.scrollTo(0, 0);
   }
 
   function generatePlan() {
-    const expected = expectedIds();
+    const expected = expectedIds({ withG2: ui.withG2 });
     const plan = Generator.generate({ venue: ui.venue, attendees: expected, focus: ui.focus, state, count: expected.length || ui.guestCount, material: [...(ui.material || state.settings.material)] });
     plan.day = ui.newDay || nextFreeDay();
     plan.attendees = null; // wird am Trainingstag abgehakt
+    plan.withG2 = !!ui.withG2;
     plan.count = expected.length || ui.guestCount;
     state.planned.push(plan);
     save();
@@ -424,14 +452,18 @@
   }
 
   function regenPlan(plan) {
-    const fresh = Generator.generate({ venue: plan.venue, attendees: plan.attendees || expectedIds(), focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: [...planMaterial(plan)] });
-    Object.assign(plan, { blocks: fresh.blocks, level: fresh.level, focus: fresh.focus, autoFocus: fresh.autoFocus });
+    const fresh = Generator.generate({ venue: plan.venue, attendees: plan.attendees || expectedIds(plan), focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: [...planMaterial(plan)] });
+    Object.assign(plan, { stations: fresh.stations, blocks: fresh.blocks, level: fresh.level, focus: fresh.focus, autoFocus: fresh.autoFocus });
     save(); rerender(); toast('Neue Übungen');
   }
 
   function swapInPlan(plan, i) {
-    const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds(), material: [...planMaterial(plan)] }); // blocks sind dieselben
+    const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds(plan), material: [...planMaterial(plan)] }); // blocks/stations sind dieselben Arrays
     return Generator.swap(view, i, state);
+  }
+  function swapStationInPlan(plan, i) {
+    const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds(plan), material: [...planMaterial(plan)] });
+    return Generator.swapStation(view, i, state);
   }
 
   // Ersetzt alle Übungen, deren Material fehlt. Gibt Anzahl ersetzter Übungen zurück.
@@ -442,13 +474,17 @@
       const ex = EX[b.exerciseId];
       if (b.type === 'ex' && (!ex || missingFor(ex, mat).length)) { swapInPlan(plan, i); n++; }
     });
+    (plan.stations || []).forEach((id, i) => {
+      const ex = EX[id];
+      if (!ex || missingFor(ex, mat).length) { swapStationInPlan(plan, i); n++; }
+    });
     save();
     return n;
   }
 
   function openAttendance(plan, finishAfter) {
     const set = new Set(plan.attendees || []);
-    const kids = activeKids();
+    const kids = planKids(plan);
     const years = yearsOf(kids);
     const groups = years.map((y) => [`Jahrgang ${y}`, kids.filter((k) => yearOf(k) === y)]);
     const noYear = kids.filter((k) => !yearOf(k));
@@ -494,7 +530,7 @@
 
   function finishPlan(plan, skipCheck) {
     if (!plan) return;
-    if (!plan.attendees && !skipCheck && activeKids().length) { openAttendance(plan, true); return; }
+    if (!plan.attendees && !skipCheck && planKids(plan).length) { openAttendance(plan, true); return; }
     plan.date = plan.day + 'T12:00:00';
     plan.attendees = plan.attendees || [];
     state.sessions.push(plan);
@@ -518,13 +554,13 @@
     const years = yearsOf(allKids);
     if (ui.kidYear !== 'alle' && !years.includes(+ui.kidYear)) ui.kidYear = 'alle';
     const byElig = (k) => ui.kidElig === 'alle' || (ui.kidElig === 'ja') === (k.eligible !== false);
-    const kids = allKids.filter((k) => (ui.kidYear === 'alle' || yearOf(k) === +ui.kidYear) && byElig(k));
+    const kids = allKids.filter((k) => (ui.kidTeam === 'alle' || teamOf(k) === ui.kidTeam) && byElig(k));
     const nElig = allKids.filter((k) => k.eligible !== false).length;
     const inactive = state.kids.filter((k) => k.active === false);
     const avg = Generator.avgRatings(kids);
     const overview = kids.length ? `
       <div class="card">
-        <div class="card-head"><h3 style="margin:0">${ui.kidYear === 'alle' ? 'Mannschaft' : 'Jahrgang ' + ui.kidYear} im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></div>
+        <div class="card-head"><h3 style="margin:0">${ui.kidTeam === 'alle' ? 'G1 + G2' : ui.kidTeam} im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></div>
         ${AREAS.map((a) => `<div class="area-row"><span>${a.icon} ${a.label}</span><div class="bar"><i style="width:${(avg[a.key] / 5) * 100}%"></i></div><b>${avg[a.key].toFixed(1)}</b></div>`).join('')}
         <p class="small muted" style="margin:8px 0 0">Größtes Potenzial: <b>${AREAS.find((a) => a.key === Generator.weakestArea(avg)).label}</b> – darauf legt der automatische Vorschlag den Schwerpunkt.</p>
       </div>` : '';
@@ -535,8 +571,9 @@
     if (noYear.length) groups.push([groups.length ? 'Ohne Jahrgang' : '', noYear]);
     const list = groups.map(([title, ks]) => `${title ? `<h3 style="margin:18px 0 10px">${title} <span class="muted" style="font-weight:500">(${ks.length})</span></h3>` : ''}<div class="grid grid-2">${ks.map((k) => kidRow(k)).join('')}</div>`).join('');
     const yearChips = allKids.length ? `<div class="chips chip-scroll" style="margin-bottom:8px">
-        <button class="chip ${ui.kidYear === 'alle' ? 'on' : ''}" data-kid-year="alle">Alle Jahrgänge</button>
-        ${years.map((y) => `<button class="chip ${+ui.kidYear === y ? 'on' : ''}" data-kid-year="${y}">Jahrgang ${y}</button>`).join('')}</div>
+        <button class="chip ${ui.kidTeam === 'alle' ? 'on' : ''}" data-kid-team="alle">G1 + G2</button>
+        <button class="chip ${ui.kidTeam === 'G1' ? 'on' : ''}" data-kid-team="G1">G1 (${allKids.filter((k) => teamOf(k) === 'G1').length})</button>
+        <button class="chip ${ui.kidTeam === 'G2' ? 'on' : ''}" data-kid-team="G2">G2 (${allKids.filter((k) => teamOf(k) === 'G2').length})</button></div>
       <div class="chips chip-scroll" style="margin-bottom:12px">
         <button class="chip ${ui.kidElig === 'alle' ? 'on' : ''}" data-kid-elig="alle">Alle (${allKids.length})</button>
         <button class="chip ${ui.kidElig === 'ja' ? 'on' : ''}" data-kid-elig="ja">✅ Spielberechtigt (${nElig})</button>
@@ -557,7 +594,7 @@
       <div class="kid-main">
         <div class="kid-name">${esc(k.name)}</div>
         <div class="muted small">${[ageOf(k) ? ageOf(k) + ' Jahre' : '', yearOf(k) ? 'Jg. ' + yearOf(k) : ''].filter(Boolean).join(' · ') || '–'}</div>
-        ${k.eligible === false ? '<span class="tag ns">nicht spielberechtigt</span>' : ''}
+        <div class="row" style="gap:4px;margin-top:2px"><span class="tag team-${teamOf(k)}">${teamOf(k)}</span>${k.eligible === false ? '<span class="tag ns">nicht spielberechtigt</span>' : ''}</div>
         <div class="kid-areas">${AREAS.map((a) => `<span>${a.icon} ${(k.ratings && k.ratings[a.key]) || 3}</span>`).join('')}</div>
       </div>
       <div style="text-align:right">${starsRO(kidAvg(k))}<div class="small muted">${attendanceCount(k.id)}× da</div></div>
@@ -583,6 +620,12 @@
             <button type="button" data-elig="1" class="${k.eligible === true || (!isNew && k.eligible !== false) ? 'on' : ''}">✅ Ja</button>
             <button type="button" data-elig="0" class="${k.eligible === false ? 'on' : ''}">⛔ Nein</button>
           </div></div>
+        <div class="field"><label>Mannschaft</label>
+          <div class="seg" id="kTeam">
+            <button type="button" data-team="" class="${!k.team ? 'on' : ''}">Auto (Jahrgang)</button>
+            <button type="button" data-team="G1" class="${k.team === 'G1' ? 'on' : ''}">G1</button>
+            <button type="button" data-team="G2" class="${k.team === 'G2' ? 'on' : ''}">G2</button>
+          </div><span class="small muted">Auto: Jahrgang ${g1Year()} und älter = G1, jünger = G2.</span></div>
         <details ${k.birthdate ? 'open' : ''} style="margin-bottom:12px"><summary class="small" style="font-weight:650">Geburtsdatum (optional)</summary>
           <div class="field" style="margin-top:8px"><input class="input" id="kBirth" type="date" value="${esc(k.birthdate || '')}" max="${new Date().toISOString().slice(0, 10)}">
             <span class="small muted" id="kAgeInfo"></span></div></details>
@@ -610,6 +653,12 @@
       }));
       const birth = root.querySelector('#kBirth'), info = root.querySelector('#kAgeInfo'), yearSel = root.querySelector('#kYear');
       let elig = k.eligible === true || (!isNew && k.eligible !== false) ? true : (k.eligible === false ? false : null);
+      let team = k.team || '';
+      root.querySelector('#kTeam').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-team]'); if (!b) return;
+        team = b.dataset.team;
+        root.querySelectorAll('#kTeam button').forEach((x) => x.classList.toggle('on', x === b));
+      });
       root.querySelector('#kElig').addEventListener('click', (e) => {
         const b = e.target.closest('[data-elig]'); if (!b) return;
         elig = b.dataset.elig === '1';
@@ -641,6 +690,7 @@
         if (elig === null) { alert('Bitte auswählen, ob das Kind spielberechtigt ist.'); return; }
         k.year = +yearSel.value;
         k.eligible = elig;
+        if (team) k.team = team; else delete k.team;
         k.note = root.querySelector('#kNote').value.trim();
         const act = root.querySelector('#kActive');
         if (act) k.active = act.checked;
@@ -856,6 +906,18 @@
           <div class="field"><label for="sClub">Vereinsname</label><input class="input" id="sClub" value="${esc(st.club)}"></div>
           <div class="field"><label for="sTeam">Mannschaft</label><input class="input" id="sTeam" value="${esc(st.team)}"></div>
         </div>
+      </div>
+      <div class="card">
+        <h3>📣 Sprüche</h3>
+        <div class="field"><label for="sChantStart">Begrüßung</label><textarea class="input" id="sChantStart" style="min-height:60px">${esc(chantStart())}</textarea></div>
+        <div class="field" style="margin:0"><label for="sChantEnd">Abschluss</label><textarea class="input" id="sChantEnd" style="min-height:80px">${esc(chantEnd())}</textarea>
+          <span class="small muted">Tipp: Jede Zeile wird im Timer groß als eigene Zeile angezeigt.</span></div>
+      </div>
+      <div class="card">
+        <h3>G1 / G2</h3>
+        <div class="field" style="margin:0;max-width:300px"><label for="sG1Year">G1 = Jahrgang … und älter</label>
+          <select class="input" id="sG1Year">${Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - 3 - i).map((y) => `<option value="${y}" ${g1Year() === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
+          <span class="small muted">Jüngere Kinder = G2. Einzelne Kinder kannst du in ihrem Profil umstellen.</span></div>
       </div>
       <div class="card">
         <h3>Standard-Material</h3>
@@ -1079,6 +1141,16 @@
     const ky = t.closest('[data-kid-year]');
     if (ky) { ui.kidYear = ky.dataset.kidYear; rerender(); return; }
 
+    const kt = t.closest('[data-kid-team]');
+    if (kt) { ui.kidTeam = kt.dataset.kidTeam; rerender(); return; }
+
+    const ss = t.closest('[data-swap-station]');
+    if (ss) {
+      const ex = swapStationInPlan(planById(ui.openPlan), +ss.dataset.swapStation);
+      save(); rerender(); toast(ex ? `Station ${+ss.dataset.swapStation + 1}: ${ex.name}` : 'Keine Alternative gefunden');
+      return;
+    }
+
     const ke = t.closest('[data-kid-elig]');
     if (ke) { ui.kidElig = ke.dataset.kidElig; rerender(); return; }
 
@@ -1150,6 +1222,15 @@
 
   $view.addEventListener('change', (e) => {
     const t = e.target;
+    if (t.id === 'pG2') { ui.withG2 = t.checked; rerender(); return; }
+    if (t.id === 'planG2') {
+      const pl = planById(ui.openPlan);
+      if (pl) { pl.withG2 = t.checked; if (pl.attendees) pl.attendees = pl.attendees.filter((id) => expectedIds(pl).includes(id)); save(); rerender(); toast(t.checked ? 'G2 trainiert mit' : 'Nur G1'); }
+      return;
+    }
+    if (t.id === 'sChantStart') { state.settings.chantStart = t.value.trim(); save(); toast('Gespeichert'); return; }
+    if (t.id === 'sChantEnd') { state.settings.chantEnd = t.value.trim(); save(); toast('Gespeichert'); return; }
+    if (t.id === 'sG1Year') { state.settings.g1Year = +t.value; save(); toast('Gespeichert'); return; }
     if (t.id === 'pDay') {
       if (t.value) { ui.newDay = t.value; ui.venue = defaultVenueFor(t.value); }
       rerender(); return;
