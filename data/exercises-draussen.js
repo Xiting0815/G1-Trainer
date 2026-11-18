@@ -31,7 +31,7 @@ window.EXERCISES.push(
     tips: [
       'Ball eng am Fuß führen – das Auto darf nicht wegrollen.',
       'Kopf hoch, damit ihr die Ampel seht!',
-      'Lob für jedes saubere Sohlen-Stoppen.'
+      'Lob für jedes saubere Stoppen mit der Sohle.'
     ],
     easier: 'Nur Grün und Rot verwenden.',
     harder: 'Zusätzliche Farbe Blau: Rückwärtsgang – Ball mit der Sohle zurückziehen.',
@@ -65,6 +65,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-farbhuetchen-zauber',
+    retired: true,
     name: 'Zauberer und Farbhütchen',
     short: 'Alle dribbeln, auf Farbruf um ein Hütchen dieser Farbe.',
     materialQty: { huetchen: '12', baelle: '1/Kind' },
@@ -135,7 +136,7 @@ window.EXERCISES.push(
     level: 1,
     material: ['huetchen', 'leibchen'],
     story: 'Der Eiszauberer (mit Leibchen) friert alle ein, die er berührt. Eingefrorene Kinder werden zu Tunneln – wer durch den Tunnel krabbelt, taut sie wieder auf!',
-    setup: 'Feld ca. 20 × 20 m mit 4 Hütchen. 1–2 Fänger bekommen ein Leibchen.',
+    setup: 'Feld ca. 20 × 20 m mit 4 Hütchen. 1–2 Fänger bekommen ein Leibchen. In der Halle: mindestens 2 m Abstand zu Wänden und Geräten.',
     steps: [
       'Die Fänger versuchen, die anderen Kinder abzuschlagen.',
       'Wer abgeschlagen ist, bleibt mit gegrätschten Beinen stehen (Tunnel).',
@@ -183,7 +184,7 @@ window.EXERCISES.push(
     level: 1,
     material: ['huetchen', 'baelle'],
     story: 'Mit Hütchen bauen wir eine große Straße rund um einen Park. Jedes Kind ist ein Auto (Ball) und fährt Runde um Runde – mal schnell auf der Autobahn, mal langsam in der Stadt.',
-    setup: 'Zwei Hütchen-Rechtecke ineinander (außen ca. 30 × 25 m, innen ca. 20 × 12 m) bilden eine Straße von ca. 4 m Breite. Jedes Kind hat einen Ball.',
+    setup: 'Zwei Hütchen-Rechtecke ineinander (außen ca. 28 × 20 m, innen ca. 20 × 12 m) bilden eine ca. 4 m breite Straße. Jedes Kind hat einen Ball.',
     steps: [
       'Alle Kinder fahren mit dem Ball auf der Straße im Uhrzeigersinn.',
       '„Autobahn!": schneller dribbeln. „Stadt!": langsam, kleine Schritte.',
@@ -286,6 +287,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-garagen-spiel',
+    retired: true,
     name: 'Ab in die Garage',
     short: 'Alle dribbeln, auf „Garage!“ Ball im Reifen stoppen.',
     materialQty: { reifen: '6', baelle: '1/Kind', huetchen: '4' },
@@ -342,6 +344,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-slalom-staffel',
+    retired: true,
     name: 'Skifahrer-Slalom',
     short: 'Slalom um Stangen dribbeln, im Tempo zurück, abklatschen.',
     materialQty: { stangen: '4/Bahn', huetchen: '2/Bahn', baelle: '1/Kind' },
@@ -404,7 +407,7 @@ window.EXERCISES.push(
     level: 2,
     material: ['huetchen', 'baelle', 'leibchen'],
     story: 'Die Mäuse haben jede ein Stück Käse (Ball). Die hungrige Katze möchte den Käse aus dem Mäusehaus schießen. Mäuse, passt gut auf euren Käse auf!',
-    setup: 'Feld ca. 20 × 20 m mit Hütchen. 1–2 Katzen mit Leibchen ohne Ball, alle anderen Kinder (Mäuse) mit Ball.',
+    setup: 'Feld ca. 20 × 20 m mit Hütchen. 1–2 Katzen mit Leibchen ohne Ball, alle anderen Kinder (Mäuse) mit Ball. In der Halle: mindestens 2 m Abstand zu Wänden und Geräten.',
     steps: [
       'Die Mäuse dribbeln im Feld und schützen ihren Ball.',
       'Die Katzen versuchen, Bälle aus dem Feld zu spitzeln.',
@@ -515,16 +518,16 @@ window.EXERCISES.push(
     level: 1,
     material: ['minitore', 'huetchen', 'baelle'],
     story: 'Ihr seid Piraten mit Kanonen-Füßen! Dribbelt zur Schusslinie und feuert die Kanonenkugel ins Piratentor.',
-    setup: '2–3 Bahnen nebeneinander, je ein Minitor. Starthütchen ca. 15 m vor dem Tor, Schusslinie (Hütchen) ca. 6 m vor dem Tor. Höchstens 2–3 Kinder pro Bahn, jedes mit Ball.',
+    setup: 'Zwei Minitore nebeneinander (ca. 5 m Abstand), Schusslinie 6 m davor. Alle Kinder starten gleichzeitig mit Ball von einer Startlinie 15 m vor den Toren.',
     steps: [
-      'Das Kind dribbelt vom Starthütchen bis zur Schusslinie.',
-      'Dann schießt es aufs Minitor – „Bumm!"',
+      'Alle Kinder dribbeln gleichzeitig von der Startlinie bis zur Schusslinie.',
+      'Dann schießt jedes Kind auf eines der Minitore – „Bumm!"',
       'Ball selbst aus dem Tor holen und außen zurück zum Start dribbeln.',
-      'Sobald das erste Kind schießt, startet schon das nächste.'
+      'Jedes Kind dribbelt sofort wieder los – kein Warten, alle sind gleichzeitig unterwegs.'
     ],
     tips: [
       'Vor dem Schuss kurz hochschauen: Wo ist das Tor?',
-      'Mit dem Spann oder der Innenseite schießen – beides ist super.',
+      'Mit dem Spann (da, wo die Schnürsenkel sind) oder der Innenseite schießen – beides ist super.',
       'Jeder Treffer wird laut gefeiert!'
     ],
     easier: 'Schusslinie näher ans Tor.',
@@ -537,6 +540,8 @@ window.EXERCISES.push(
         { type: 'goal', x: 92, y: 46, rot: 90 },
         { type: 'cone', x: 18, y: 18, color: 'blue' },
         { type: 'cone', x: 18, y: 46, color: 'blue' },
+        { type: 'line', x1: 18, y1: 8, x2: 18, y2: 58, dash: true },
+        { type: 'label', x: 18, y: 62, text: 'Startlinie' },
         { type: 'line', x1: 66, y1: 8, x2: 66, y2: 58, dash: true },
         { type: 'cone', x: 66, y: 8, color: 'orange' },
         { type: 'cone', x: 66, y: 32, color: 'orange' },
@@ -559,6 +564,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-krokodilfluss',
+    retired: true,
     name: 'Krokodilfluss',
     short: 'Alle dribbeln über den Fluss, Krokodile spitzeln Bälle weg.',
     materialQty: { huetchen: '8', baelle: '1/Kind', leibchen: '2' },
@@ -612,6 +618,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-pass-tore',
+    retired: true,
     name: 'Briefträger-Pässe',
     short: 'Paare passen sich durch ein Hütchentor, dann Tor wechseln.',
     materialQty: { huetchen: '8', baelle: '1/Paar' },
@@ -663,6 +670,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-1gegen1-minitore',
+    retired: true,
     name: 'Ritterduell 1:1',
     short: '1 gegen 1 auf zwei Minitore, nach jedem Tor Rollen tauschen.',
     materialQty: { minitore: '2', huetchen: '4', baelle: '6', leibchen: '2' },
@@ -718,7 +726,7 @@ window.EXERCISES.push(
     id: 'd-slalom-schuss',
     name: 'Slalom und Schuss',
     short: 'Durch den Stangenslalom dribbeln, dann sofort aufs Minitor.',
-    materialQty: { stangen: '4', minitore: '1', baelle: '1/Kind', huetchen: '1' },
+    materialQty: { stangen: '6–8', minitore: '2', baelle: '1/Kind', huetchen: '4' },
     venue: ['draussen'],
     phase: 'hauptteil',
     focus: ['ballgefuehl', 'torschuss', 'koordination'],
@@ -727,40 +735,42 @@ window.EXERCISES.push(
     level: 2,
     material: ['stangen', 'minitore', 'baelle', 'huetchen'],
     story: 'Ein Fußballstar dribbelt durch die ganze Abwehr (Stangen) und schießt dann das Tor des Jahres!',
-    setup: '2–3 Bahnen nebeneinander: Starthütchen, 4 Stangen im Abstand von ca. 2 m, danach ein Minitor in ca. 8 m Entfernung. Höchstens 2–3 Kinder pro Bahn, alle mit Ball.',
+    setup: 'Ein „Abwehr-Wald“ aus 6–8 Stangen frei verteilt auf ca. 15×10 m, dahinter zwei Minitore. Alle Kinder dribbeln gleichzeitig durch den Wald (um mind. 3 Stangen) und schießen dann.',
     steps: [
-      'Das Kind dribbelt im Slalom durch die Stangen.',
-      'Nach der letzten Stange schießt es sofort aufs Minitor.',
+      'Alle Kinder dribbeln gleichzeitig durch den Abwehr-Wald und umkurven mindestens 3 Stangen.',
+      'Aus dem Wald heraus sofort auf eines der Minitore schießen.',
       'Ball holen und außen zurück zum Start dribbeln.',
-      'Das nächste Kind startet, sobald das erste aus dem Slalom heraus ist.'
+      'Gleich die nächste Runde – kein Anstellen, alle sind gleichzeitig unterwegs.'
     ],
     tips: [
       'Im Slalom kleine Ballkontakte, danach den Ball zum Schuss vorlegen.',
       'Beim Schuss auf den Ball schauen, danach jubeln!',
       'Wer zurückdribbelt, bleibt außen – kein Zusammenstoß.'
     ],
-    easier: 'Nur 2–3 Stangen, größerer Abstand.',
+    easier: 'Weniger Stangen, mehr Platz dazwischen.',
     harder: 'Ein Kind steht als Torwart im Tor oder zwei Hütchen markieren die Ecken, die getroffen werden sollen.',
     animation: {
       loop: 9,
       field: 'rasen',
       objects: [
-        { type: 'cone', x: 12, y: 18, color: 'blue' },
-        { type: 'pole', x: 25, y: 18 }, { type: 'pole', x: 35, y: 18 }, { type: 'pole', x: 45, y: 18 }, { type: 'pole', x: 55, y: 18 },
+        { type: 'line', x1: 12, y1: 8, x2: 12, y2: 56, dash: true },
+        { type: 'label', x: 12, y: 61, text: 'Start' },
+        { type: 'pole', x: 30, y: 15 }, { type: 'pole', x: 42, y: 25 }, { type: 'pole', x: 52, y: 15 },
+        { type: 'pole', x: 34, y: 36 }, { type: 'pole', x: 48, y: 44 }, { type: 'pole', x: 60, y: 30 }, { type: 'pole', x: 58, y: 52 },
+        { type: 'label', x: 45, y: 4, text: 'Abwehr-Wald' },
         { type: 'goal', x: 92, y: 18, rot: 90 },
-        { type: 'cone', x: 12, y: 44, color: 'blue' },
-        { type: 'pole', x: 25, y: 44 }, { type: 'pole', x: 35, y: 44 }, { type: 'pole', x: 45, y: 44 }, { type: 'pole', x: 55, y: 44 },
-        { type: 'goal', x: 92, y: 44, rot: 90 }
+        { type: 'goal', x: 92, y: 46, rot: 90 }
       ],
       actors: [
-        { id: 'p1', kind: 'player', color: 'red', keys: [[0, 12, 18], [0.08, 25, 14], [0.16, 35, 22], [0.24, 45, 14], [0.32, 55, 22], [0.4, 64, 18], [0.5, 78, 20], [0.6, 90, 22], [0.8, 50, 28], [0.9, 25, 27], [1, 12, 18]] },
-        { id: 'b1', kind: 'ball', keys: [[0, 14, 18], [0.08, 27, 14], [0.16, 37, 22], [0.24, 47, 14], [0.32, 57, 22], [0.4, 66, 18], [0.46, 93, 18], [0.5, 93, 18], [0.6, 91, 22], [0.8, 48, 28], [0.9, 23, 27], [1, 14, 18]] },
-        { id: 'p2', kind: 'player', color: 'blue', keys: [[0, 78, 20], [0.1, 90, 22], [0.3, 50, 28], [0.4, 25, 27], [0.5, 12, 18], [0.58, 25, 14], [0.66, 35, 22], [0.74, 45, 14], [0.82, 55, 22], [0.9, 64, 18], [1, 78, 20]] },
-        { id: 'b2', kind: 'ball', keys: [[0, 93, 18], [0.1, 91, 22], [0.3, 48, 28], [0.4, 23, 27], [0.5, 14, 18], [0.58, 27, 14], [0.66, 37, 22], [0.74, 47, 14], [0.82, 57, 22], [0.9, 66, 18], [0.96, 93, 18], [1, 93, 18]] },
-        { id: 'p3', kind: 'player', color: 'yellow', keys: [[0, 12, 44], [0.08, 25, 40], [0.16, 35, 48], [0.24, 45, 40], [0.32, 55, 48], [0.4, 64, 44], [0.5, 78, 46], [0.6, 90, 48], [0.8, 50, 54], [0.9, 25, 53], [1, 12, 44]] },
-        { id: 'b3', kind: 'ball', keys: [[0, 14, 44], [0.08, 27, 40], [0.16, 37, 48], [0.24, 47, 40], [0.32, 57, 48], [0.4, 66, 44], [0.46, 93, 44], [0.5, 93, 44], [0.6, 91, 48], [0.8, 48, 54], [0.9, 23, 53], [1, 14, 44]] },
-        { id: 'p4', kind: 'player', color: 'green', keys: [[0, 78, 46], [0.1, 90, 48], [0.3, 50, 54], [0.4, 25, 53], [0.5, 12, 44], [0.58, 25, 40], [0.66, 35, 48], [0.74, 45, 40], [0.82, 55, 48], [0.9, 64, 44], [1, 78, 46]] },
-        { id: 'b4', kind: 'ball', keys: [[0, 93, 44], [0.1, 91, 48], [0.3, 48, 54], [0.4, 23, 53], [0.5, 14, 44], [0.58, 27, 40], [0.66, 37, 48], [0.74, 47, 40], [0.82, 57, 48], [0.9, 66, 44], [0.96, 93, 44], [1, 93, 44]] }
+        { id: 'p1', kind: 'player', color: 'red', keys: [[0, 12, 18], [0.1, 26, 20], [0.16, 30, 9], [0.22, 36, 16], [0.3, 44, 30], [0.36, 52, 23], [0.42, 58, 12], [0.48, 66, 16], [0.58, 88, 20], [0.8, 40, 3], [1, 12, 18]] },
+        { id: 'b1', kind: 'ball', keys: [[0, 14, 18], [0.1, 28, 20], [0.16, 32, 9], [0.22, 38, 16], [0.3, 46, 30], [0.36, 54, 23], [0.42, 60, 12], [0.48, 68, 16], [0.54, 93, 18], [0.58, 90, 20], [0.8, 38, 3], [1, 14, 18]] },
+        { id: 'p2', kind: 'player', color: 'yellow', keys: [[0, 12, 46], [0.1, 26, 40], [0.18, 34, 29], [0.26, 40, 38], [0.34, 48, 51], [0.4, 56, 44], [0.46, 62, 38], [0.52, 68, 44], [0.62, 88, 46], [0.82, 40, 61], [1, 12, 46]] },
+        { id: 'b2', kind: 'ball', keys: [[0, 14, 46], [0.1, 28, 40], [0.18, 36, 29], [0.26, 42, 38], [0.34, 50, 51], [0.4, 58, 44], [0.46, 64, 38], [0.52, 70, 44], [0.58, 93, 46], [0.62, 90, 46], [0.82, 38, 61], [1, 14, 46]] },
+        { id: 'p3', kind: 'player', color: 'blue', keys: [[0, 70.4, 16.8], [0.08, 88, 20], [0.3, 40, 3], [0.5, 12, 18], [0.6, 26, 20], [0.66, 30, 9], [0.72, 36, 16], [0.8, 44, 30], [0.86, 52, 23], [0.92, 58, 12], [0.98, 66, 16], [1, 70.4, 16.8]] },
+        { id: 'b3', kind: 'ball', keys: [[0, 76.3, 16.7], [0.04, 93, 18], [0.08, 90, 20], [0.3, 38, 3], [0.5, 14, 18], [0.6, 28, 20], [0.66, 32, 9], [0.72, 38, 16], [0.8, 46, 30], [0.86, 54, 23], [0.92, 60, 12], [0.98, 68, 16], [1, 76.3, 16.7]] },
+        { id: 'p4', kind: 'player', color: 'green', keys: [[0, 66, 42], [0.02, 68, 44], [0.12, 88, 46], [0.32, 40, 61], [0.5, 12, 46], [0.6, 26, 40], [0.68, 34, 29], [0.76, 40, 38], [0.84, 48, 51], [0.9, 56, 44], [0.96, 62, 38], [1, 66, 42]] },
+        { id: 'b4', kind: 'ball', keys: [[0, 68, 42], [0.02, 70, 44], [0.08, 93, 46], [0.12, 90, 46], [0.32, 38, 61], [0.5, 14, 46], [0.6, 28, 40], [0.68, 36, 29], [0.76, 42, 38], [0.84, 50, 51], [0.9, 58, 44], [0.96, 64, 38], [1, 68, 42]] },
+        { id: 'c', kind: 'coach', keys: [[0, 76, 32]] }
       ]
     }
   },
@@ -774,16 +784,16 @@ window.EXERCISES.push(
     phase: 'hauptteil',
     focus: ['laufen', 'torschuss', 'ballgefuehl'],
     duration: 10,
-    players: [4, 12],
+    players: [4, 8],
     level: 3,
     material: ['minitore', 'baelle', 'huetchen', 'leibchen'],
     story: 'Der Trainer ist der Ballzauberer: Er zaubert einen Ball aufs Feld. Zwei Kinder flitzen los – wer zuerst am Ball ist, wird Stürmer, das andere Kind verteidigt.',
-    setup: 'Feld ca. 25 × 15 m, an beiden Enden ein Minitor. Der Trainer steht mit vielen Bällen in der Mitte. Zwei Paare starten gleichzeitig – eins Richtung linkes, eins Richtung rechtes Tor.',
+    setup: 'Feld ca. 20×15 m, an beiden Enden ein Minitor. Trainer steht mit vielen Bällen in der Mitte. Die Kinder sitzen als Paare links und rechts vom Trainer.',
     steps: [
       'Je 2 Kinder stehen neben dem Trainer, Blick zu ihrem Tor.',
       'Der Trainer rollt den Ball Richtung Tor.',
       'Beide sprinten los: Wer den Ball zuerst hat, greift an, das andere Kind verteidigt (1:1).',
-      'Nach Tor oder Aus bringen beide den Ball zurück – das nächste Paar ist sofort dran.'
+      'Nach Tor oder Aus sofort das nächste Paar. Wartende Paare rollen sich den Ball mit der Sohle zu.'
     ],
     tips: [
       'Bereit-Stellung: leicht in den Knien, Blick zum Ball.',
@@ -831,7 +841,7 @@ window.EXERCISES.push(
     steps: [
       'Jedes Kind passt von seiner Linie aus auf die Hütchen in der Mitte.',
       'Bälle, die durchrollen, nimmt das andere Team an und passt zurück.',
-      'Umgefallene Hütchen bleiben liegen – zählt am Ende, wer mehr Kegel auf der gegnerischen Seite liegen hat.',
+      'Umgefallene Hütchen bleiben liegen. Sind alle Kegel umgefallen, rufen alle „Alle neune!“.',
       'Hütchen wieder aufstellen und neue Runde.'
     ],
     tips: [
@@ -923,6 +933,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-vier-tore-spiel',
+    retired: true,
     name: 'Tore-Jäger auf 4 Tore',
     short: 'Alle dribbeln zu einem der vier Minitore und schießen.',
     materialQty: { minitore: '4', baelle: '1/Kind', huetchen: '4' },
@@ -974,6 +985,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-doppelpass-tor',
+    retired: true,
     name: 'Doppelpass-Zauber',
     short: 'Paare spielen Doppelpass bis vors Minitor, dann Schuss.',
     materialQty: { minitore: '1', huetchen: '2', baelle: '1/Paar' },
@@ -1046,7 +1058,7 @@ window.EXERCISES.push(
       'Wer zuerst zurück in der Wache ist, darf die nächste Farbe rufen.'
     ],
     easier: 'Nur 2 Tore, eins pro Farbe.',
-    harder: 'Rechenaufgaben oder Tiere statt Farben (z. B. „Elefant" = rot), oder mit dem schwachen Fuß schießen.',
+    harder: 'Tiere statt Farben (z. B. „Elefant!“ = rot) oder mit dem schwachen Fuß schießen.',
     animation: {
       loop: 8,
       field: 'rasen',
@@ -1078,6 +1090,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-dribbelkoenig',
+    retired: true,
     name: 'Dribbelkönig',
     short: 'Alle schützen ihren Ball und spitzeln andere aus dem Quadrat.',
     materialQty: { huetchen: '4', baelle: '1/Kind' },
@@ -1102,7 +1115,7 @@ window.EXERCISES.push(
       'Fair bleiben: Nur den Ball spielen!'
     ],
     easier: 'Größeres Feld; der Trainer ist der einzige Angreifer.',
-    harder: 'Feld verkleinern oder wer rausmuss, dribbelt einmal um das ganze Feld.',
+    harder: 'Feld verkleinern oder nur mit dem schwachen Fuß dribbeln.',
     animation: {
       loop: 8,
       field: 'rasen',
@@ -1133,6 +1146,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-funino',
+    retired: true,
     name: 'Funino 3:3',
     short: '3 gegen 3 auf je zwei Minitore, Tore nur aus der Schusszone.',
     materialQty: { minitore: '4', huetchen: '8', leibchen: '3', baelle: '4' },
@@ -1191,16 +1205,16 @@ window.EXERCISES.push(
     id: 'd-2gegen2-minitore',
     name: '2:2 auf Minitore',
     short: '2 gegen 2 auf zwei Minitore, nach jedem Tor neu von hinten.',
-    materialQty: { minitore: '2', huetchen: '4', leibchen: '2', baelle: '4' },
-    venue: ['draussen'],
-    phase: 'abschluss',
+    materialQty: { minitore: '4', huetchen: '12', leibchen: '1/Kind (2 Farben)', baelle: '9' },
+    venue: ['draussen', 'halle'],
+    phase: 'hauptteil',
     focus: ['torschuss', 'sozial', 'ballgefuehl'],
     duration: 12,
     players: [4, 16],
     level: 1,
     material: ['minitore', 'huetchen', 'leibchen', 'baelle'],
     story: 'Kleine Teams, große Helden! Zu zweit stürmt ihr auf das Tor der anderen – jedes Kind ist ganz oft am Ball.',
-    setup: 'Mehrere Felder (ca. 15 × 10 m) nebeneinander, auf jeder Grundlinie ein Minitor. 2 gegen 2 pro Feld, Ersatzbälle neben den Toren.',
+    setup: 'Mehrere Felder (ca. 15 × 10 m) nebeneinander, auf jeder Grundlinie ein Minitor. Ab dem 3. Feld Hütchentore (1,5 m breit). 2 gegen 2 pro Feld, Ersatzbälle neben den Toren.',
     steps: [
       'Ein Team startet mit Ball an der eigenen Grundlinie.',
       'Beide Teams versuchen, ins gegnerische Minitor zu treffen.',
@@ -1239,7 +1253,7 @@ window.EXERCISES.push(
     id: 'd-wm-turnier',
     name: 'Kleine WM',
     short: 'Länderteams spielen 2:2 oder 3:3, nach jedem Spiel Feldwechsel.',
-    materialQty: { minitore: '2', huetchen: '4', leibchen: '3', baelle: '3' },
+    materialQty: { minitore: '4', huetchen: '4', leibchen: '3', baelle: '3' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['torschuss', 'sozial'],
@@ -1248,7 +1262,7 @@ window.EXERCISES.push(
     level: 2,
     material: ['minitore', 'huetchen', 'leibchen', 'baelle'],
     story: 'Heute ist Weltmeisterschaft! Jedes Team sucht sich ein Land aus – Brasilien, Deutschland, Spanien … – und spielt in kurzen Spielen gegen die anderen Länder.',
-    setup: '2–3 Felder (ca. 20 × 12 m) nebeneinander mit je 2 Minitoren. Teams à 2–3 Kinder mit Leibchen, jedes Team bekommt einen Länder-Namen.',
+    setup: '2–3 Felder (ca. 20 × 12 m) nebeneinander mit je 2 Minitoren. Teams à 2–3 Kinder mit Leibchen, jedes Team bekommt einen Länder-Namen. Ab dem 3. Feld Hütchentore (1,5 m) statt Minitore.',
     steps: [
       'Auf allen Feldern wird gleichzeitig 2:2 oder 3:3 gespielt (je 3–4 Minuten).',
       'Nach jedem Spiel wechseln die Teams nach einem festen Plan das Feld und den Gegner.',
@@ -1261,7 +1275,7 @@ window.EXERCISES.push(
       'Ergebnisse nicht zu wichtig nehmen: Spaß und viele Tore zählen!'
     ],
     easier: 'Ohne Wertung spielen, größere Tore.',
-    harder: 'Mit Tabelle und Finale, Tore nur aus einer Schusszone.',
+    harder: 'Tore nur aus einer Schusszone (4 m vor dem Tor).',
     animation: {
       loop: 10,
       field: 'rasen',
@@ -1296,6 +1310,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-aufstiegsturnier',
+    retired: true,
     name: 'Champions-League-Aufstieg',
     short: '1:1 oder 2:2, Sieger steigen ein Feld auf, Verlierer ab.',
     materialQty: { minitore: '2', huetchen: '4', baelle: '3', leibchen: '2' },
@@ -1351,9 +1366,9 @@ window.EXERCISES.push(
 
   {
     id: 'd-dribbeltore-3gegen3',
-    name: 'Dribbeltore 3:3',
-    short: '3 gegen 3, Punkt für jedes Dribbling durch ein Hütchentor.',
-    materialQty: { huetchen: '12', leibchen: '3', baelle: '3' },
+    name: 'Dribbeltore 2:2',
+    short: '2 gegen 2, Punkt für jedes Dribbling durch ein Hütchentor.',
+    materialQty: { huetchen: '12', leibchen: '1/Kind (2 Farben)', baelle: '3' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['ballgefuehl', 'sozial'],
@@ -1362,9 +1377,9 @@ window.EXERCISES.push(
     level: 2,
     material: ['huetchen', 'leibchen', 'baelle'],
     story: 'Im Feld stehen viele Zaubertore. Ein Tor zählt nur, wenn man mit dem Ball am Fuß hindurchdribbelt – schießen gilt nicht!',
-    setup: 'Feld ca. 25 × 20 m, darin 5–6 Hütchentore (ca. 2 m breit) verteilt. 2 Teams à 3 Kinder mit Leibchen.',
+    setup: 'Feld ca. 25 × 20 m, darin 5–6 Hütchentore (ca. 2 m breit) verteilt. 2 Teams à 2 Kinder mit Leibchen.',
     steps: [
-      'Es spielen 3 gegen 3 mit einem Ball.',
+      'Es spielen 2 gegen 2 mit einem Ball; bei 6+ Kindern zwei Spiele mit je eigenem Ball im selben Feld.',
       'Ein Punkt gibt es, wenn ein Kind mit dem Ball durch ein beliebiges Tor dribbelt (von beiden Seiten möglich).',
       'Nicht zweimal hintereinander durch dasselbe Tor.',
       'Die Verteidiger dürfen sich nicht dauerhaft ins Tor stellen.'
@@ -1402,6 +1417,7 @@ window.EXERCISES.push(
 
   {
     id: 'd-nummernspiel',
+    retired: true,
     name: 'Nummernspiel',
     short: 'Trainer ruft Nummern, die Kinder spielen 1:1 oder 2:2 auf Tore.',
     materialQty: { minitore: '2', baelle: '10', huetchen: '4', leibchen: '4' },
@@ -1454,20 +1470,20 @@ window.EXERCISES.push(
 
   {
     id: 'd-linienfussball',
-    name: 'Linienfußball 3:3',
-    short: '3 gegen 3, Ball über die gegnerische Linie dribbeln und stoppen.',
+    name: 'Linienfußball 2:2',
+    short: '2 gegen 2, Ball über die gegnerische Linie dribbeln und stoppen.',
     materialQty: { huetchen: '8', leibchen: '3', baelle: '3' },
     venue: ['draussen'],
     phase: 'abschluss',
     focus: ['ballgefuehl', 'sozial', 'laufen'],
     duration: 12,
     players: [6, 12],
-    level: 3,
+    level: 2,
     material: ['huetchen', 'leibchen', 'baelle'],
     story: 'Jedes Team will in die Burg der anderen einreiten! Ein Punkt gibt es, wenn ein Kind mit dem Ball am Fuß über die gegnerische Burgmauer (Grundlinie) dribbelt.',
-    setup: 'Feld ca. 25 × 20 m. Die beiden Grundlinien mit Hütchen gut sichtbar markieren. 2 Teams à 3 Kinder mit Leibchen, Ersatzbälle an der Seite.',
+    setup: 'Feld ca. 25 × 20 m. Die beiden Grundlinien mit Hütchen gut sichtbar markieren. 2 Teams à 2 Kinder mit Leibchen, Ersatzbälle an der Seite.',
     steps: [
-      'Es wird 3 gegen 3 gespielt, ohne Tore.',
+      'Es wird 2 gegen 2 gespielt, ohne Tore (bei 6+ Kindern zwei Bälle).',
       'Punkt: Ball über die gegnerische Grundlinie dribbeln und dort mit der Sohle stoppen.',
       'Danach startet das andere Team von seiner Grundlinie mit Ball.',
       'Spielzeit 3–4 Minuten, dann Teams neu mischen.'
@@ -1475,9 +1491,9 @@ window.EXERCISES.push(
     tips: [
       'Die Linie ist breit – sucht die Stelle, wo kein Verteidiger ist.',
       'Mit Tempo in die freie Lücke dribbeln.',
-      'Verteidiger: zu zweit den Weg zur Linie zustellen.'
+      'Verteidiger: mutig hingehen und den Ball zurückerobern!'
     ],
-    easier: 'Feld breiter machen oder 3:2 mit Überzahl.',
+    easier: 'Feld breiter machen oder 2:1 mit Überzahl.',
     harder: 'Punkt zählt nur in einer markierten Zone der Linie (z. B. 5 m breit) oder nach vorherigem Pass.',
     animation: {
       loop: 10,
