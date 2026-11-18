@@ -99,25 +99,31 @@
     return s + Math.random() * 3;
   }
 
+  const hasMaterial = (ex, material) => (ex.material || []).every((m) => material.has(m));
+
+  // Streng: nur Übungen, für die ALLES Material vorhanden ist.
   function candidates(phase, ctx, exclude) {
-    const all = (window.EXERCISES || []).filter(
-      (ex) => ex.phase === phase && ex.venue.includes(ctx.venue) && !exclude.has(ex.id)
+    return (window.EXERCISES || []).filter(
+      (ex) => ex.phase === phase && ex.venue.includes(ctx.venue) && !exclude.has(ex.id) && hasMaterial(ex, ctx.material)
     );
-    const withMat = all.filter((ex) => (ex.material || []).every((m) => ctx.material.has(m)));
-    return withMat.length ? withMat : all;
   }
 
+  // Ersatz-Phasen, falls für eine Phase mit dem Material nichts passt
+  const FALLBACK = { abschluss: ['hauptteil', 'aufwaermen'], hauptteil: ['aufwaermen', 'abschluss'], aufwaermen: ['hauptteil'] };
+
   function pick(phase, ctx, exclude) {
-    const list = candidates(phase, ctx, exclude)
-      .map((ex) => ({ ex, s: score(ex, ctx) }))
-      .sort((a, b) => b.s - a.s);
+    let list = candidates(phase, ctx, exclude);
+    if (!list.length) {
+      for (const alt of FALLBACK[phase] || []) { list = candidates(alt, ctx, exclude); if (list.length) break; }
+    }
+    list = list.map((ex) => ({ ex, s: score(ex, ctx) })).sort((a, b) => b.s - a.s);
     if (!list.length) return null;
     // Aus den besten 3 zufällig wählen – für Abwechslung
     const top = list.slice(0, 3);
     return top[Math.floor(Math.random() * top.length)].ex;
   }
 
-  function buildContext({ venue, attendees, focus, state, count }) {
+  function buildContext({ venue, attendees, focus, state, count, material }) {
     const kids = state.kids.filter((k) => attendees.includes(k.id));
     const avg = avgRatings(kids);
     const recent = new Map();
@@ -132,15 +138,15 @@
       level: targetLevel(avg),
       focus: focus && focus !== 'auto' ? focus : weakestArea(avg),
       autoFocus: !focus || focus === 'auto',
-      material: new Set(state.settings.material),
+      material: new Set(material || state.settings.material),
       recent,
       favorites: new Set(state.favorites),
     };
   }
 
-  function generate({ venue, attendees, focus, state, count }) {
+  function generate({ venue, attendees, focus, state, count, material }) {
     const tpl = TEMPLATES[venue];
-    const ctx = buildContext({ venue, attendees, focus, state, count });
+    const ctx = buildContext({ venue, attendees, focus, state, count, material });
     const used = new Set();
     const blocks = tpl.blocks.map((b) => {
       const block = { type: b.type, label: b.label, minutes: b.minutes, phase: b.phase || null, key: b.key || null, exerciseId: null };
@@ -159,6 +165,7 @@
       focus: ctx.focus,
       autoFocus: ctx.autoFocus,
       level: ctx.level,
+      material: [...ctx.material],
       blocks,
       rating: 0,
       note: '',
@@ -168,12 +175,12 @@
   function swap(plan, index, state) {
     const block = plan.blocks[index];
     if (!block || block.type !== 'ex') return null;
-    const ctx = buildContext({ venue: plan.venue, attendees: plan.attendees, focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count });
+    const ctx = buildContext({ venue: plan.venue, attendees: plan.attendees, focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: plan.material });
     const used = new Set(plan.blocks.map((b) => b.exerciseId).filter(Boolean));
     const ex = pick(block.phase, ctx, used);
-    if (ex) block.exerciseId = ex.id;
+    block.exerciseId = ex ? ex.id : null;
     return ex;
   }
 
-  window.Generator = { TEMPLATES, RITUALS, generate, swap, avgRatings, targetLevel, weakestArea };
+  window.Generator = { TEMPLATES, RITUALS, generate, swap, hasMaterial, avgRatings, targetLevel, weakestArea };
 })();

@@ -33,6 +33,7 @@
     openPlan: null,
     newPlan: false,
     newDay: null,
+    material: null, // Material-Auswahl beim Planen
   };
 
   let viewCtrls = [];
@@ -211,6 +212,13 @@
   const planCount = (plan) => (plan.attendees ? plan.attendees.length : (expectedIds().length || plan.count || 0));
   const isEligible = (k) => k.eligible !== false;
 
+  const planMaterial = (plan) => new Set(plan.material || state.settings.material);
+  const missingFor = (ex, mat) => (ex.material || []).filter((m) => !mat.has(m));
+
+  function materialChips(selected, attr) {
+    return `<div class="chips">${Store.MATERIAL.map((m) => `<button class="chip ${selected.has(m.key) ? 'on' : ''}" ${attr}="${m.key}">${m.label}</button>`).join('')}</div>`;
+  }
+
   function renderTraining() {
     const open = ui.openPlan && planById(ui.openPlan);
     if (open) return renderPlan(open);
@@ -282,6 +290,12 @@
         <p class="small muted" style="margin-top:10px">Automatisch = der Bereich, in dem die Mannschaft im Schnitt am schwächsten ist. Schwierigkeit: <b>${LEVEL[Generator.targetLevel(avg)]}</b>.</p>
       </div>
       <div class="card">
+        <h3>🧺 Welches Material ist da?</h3>
+        <p class="small muted">Es werden nur Übungen vorgeschlagen, für die alles hier Ausgewählte reicht. Vorauswahl änderst du unter „Mehr“.</p>
+        ${materialChips(ui.material, 'data-pmat')}
+        ${['baelle', 'huetchen'].filter((m) => !ui.material.has(m)).map((m) => `<p class="small" style="color:var(--warn);margin-top:8px">⚠️ Ohne ${MAT[m]} gibt es kaum passende Übungen.</p>`).join('')}
+      </div>
+      <div class="card">
         <h3>👥 Kinder</h3>
         ${kids.length
           ? `<p class="small" style="margin:0">Geplant wird für alle <b>${kids.length} Kinder</b> (${elig} spielberechtigt, ${kids.length - elig} nicht spielberechtigt). Wer wirklich da ist, hakst du <b>am Trainingstag</b> ab.</p>`
@@ -309,10 +323,12 @@
       }
       const ex = EX[b.exerciseId];
       if (!ex) {
-        return `<div class="block">${timeCol}<div><div class="block-title">${esc(b.label)}</div><p class="muted">Keine passende Übung gefunden.</p>
+        return `<div class="block">${timeCol}<div><div class="block-title">${esc(b.label)}</div><p class="muted">Mit dem ausgewählten Material gibt es hierfür keine passende Übung. Material ergänzen oder neu suchen.</p>
           <div class="block-actions"><button class="btn btn-sm" data-swap="${i}">🔄 Neu suchen</button></div></div></div>`;
       }
       const big = ex.players && count > ex.players[1];
+      const miss = missingFor(ex, planMaterial(plan));
+      const otherPhase = ex.phase !== b.phase;
       return `<div class="block">${timeCol}<div>
         <div class="block-title">${esc(b.label)}</div>
         <div class="block-ex">
@@ -321,6 +337,8 @@
             <h3>${esc(ex.name)}</h3>
             <div class="ex-meta" style="margin-bottom:6px">${ex.focus.map((f) => `<span class="tag">${FOCUS[f] || f}</span>`).join(' ')}</div>
             <p class="small">${esc(ex.setup)}</p>
+            ${miss.length ? `<p class="small" style="color:var(--danger)">⚠️ Braucht ${miss.map((m) => MAT[m] || m).join(', ')} – nicht ausgewählt.</p>` : ''}
+            ${otherPhase ? `<p class="small muted">ℹ️ Mit deinem Material gibt es kein passendes ${PHASES[b.phase]} – Ersatz aus „${PHASES[ex.phase]}“.</p>` : ''}
             ${big ? `<p class="small" style="color:var(--warn)">👥 ${count} Kinder – in Gruppen à max. ${ex.players[1]} aufteilen.</p>` : ''}
             <p class="small muted">Material: ${(ex.material || []).map((m) => MAT[m] || m).join(', ') || '–'}</p>
             <div class="block-actions">
@@ -352,6 +370,16 @@
         </div>
         <p class="small" style="margin:10px 0 0"><b>🧺 Aufbauen / mitnehmen:</b> ${[...materials].map((m) => MAT[m] || m).join(', ') || '–'}</p>
       </div>
+      ${(() => {
+        const mat = planMaterial(plan);
+        const conflicts = plan.blocks.filter((b) => b.type === 'ex' && EX[b.exerciseId] && missingFor(EX[b.exerciseId], mat).length).length;
+        return `<details class="card" ${conflicts ? 'open' : ''}>
+          <summary style="font-weight:700;cursor:pointer">🧺 Verfügbares Material (${mat.size}/${Store.MATERIAL.length})</summary>
+          <p class="small muted" style="margin:8px 0">Antippen zum Ändern – Übungen, für die dann etwas fehlt, werden automatisch ersetzt.</p>
+          ${materialChips(mat, 'data-plmat')}
+          ${conflicts ? `<p class="small" style="color:var(--danger);margin-top:10px">⚠️ ${conflicts} Übung(en) brauchen Material, das nicht da ist.</p><button class="btn btn-primary btn-sm" data-act="fix-mat">Passend ersetzen</button>` : ''}
+        </details>`;
+      })()}
       <div class="card" style="${!plan.attendees && isToday ? 'border:2px solid var(--primary-2)' : ''}">
         <div class="row">
           <div style="flex:1"><h3 style="margin:0">👥 Anwesenheit</h3>
@@ -379,12 +407,13 @@
     ui.newDay = nextFreeDay();
     ui.venue = defaultVenueFor(ui.newDay);
     ui.focus = 'auto';
+    ui.material = new Set(state.settings.material);
     rerender(); window.scrollTo(0, 0);
   }
 
   function generatePlan() {
     const expected = expectedIds();
-    const plan = Generator.generate({ venue: ui.venue, attendees: expected, focus: ui.focus, state, count: expected.length || ui.guestCount });
+    const plan = Generator.generate({ venue: ui.venue, attendees: expected, focus: ui.focus, state, count: expected.length || ui.guestCount, material: [...(ui.material || state.settings.material)] });
     plan.day = ui.newDay || nextFreeDay();
     plan.attendees = null; // wird am Trainingstag abgehakt
     plan.count = expected.length || ui.guestCount;
@@ -395,14 +424,26 @@
   }
 
   function regenPlan(plan) {
-    const fresh = Generator.generate({ venue: plan.venue, attendees: plan.attendees || expectedIds(), focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count });
+    const fresh = Generator.generate({ venue: plan.venue, attendees: plan.attendees || expectedIds(), focus: plan.autoFocus ? 'auto' : plan.focus, state, count: plan.count, material: [...planMaterial(plan)] });
     Object.assign(plan, { blocks: fresh.blocks, level: fresh.level, focus: fresh.focus, autoFocus: fresh.autoFocus });
     save(); rerender(); toast('Neue Übungen');
   }
 
   function swapInPlan(plan, i) {
-    const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds() }); // blocks sind dieselben
+    const view = Object.assign({}, plan, { attendees: plan.attendees || expectedIds(), material: [...planMaterial(plan)] }); // blocks sind dieselben
     return Generator.swap(view, i, state);
+  }
+
+  // Ersetzt alle Übungen, deren Material fehlt. Gibt Anzahl ersetzter Übungen zurück.
+  function fixMaterial(plan) {
+    const mat = planMaterial(plan);
+    let n = 0;
+    plan.blocks.forEach((b, i) => {
+      const ex = EX[b.exerciseId];
+      if (b.type === 'ex' && (!ex || missingFor(ex, mat).length)) { swapInPlan(plan, i); n++; }
+    });
+    save();
+    return n;
   }
 
   function openAttendance(plan, finishAfter) {
@@ -817,8 +858,8 @@
         </div>
       </div>
       <div class="card">
-        <h3>Vorhandenes Material</h3>
-        <p class="small muted">Der Vorschlag nutzt nur Übungen, für die das Material da ist.</p>
+        <h3>Standard-Material</h3>
+        <p class="small muted">Vorauswahl beim Planen. Pro Training kannst du das Material beim Planen noch anpassen.</p>
         <div class="chips">${Store.MATERIAL.map((m) => `<button class="chip ${st.material.includes(m.key) ? 'on' : ''}" data-mat="${m.key}">${m.label}</button>`).join('')}</div>
         <div class="field" style="margin-top:14px;max-width:260px"><label for="sDay">Fester Trainingstag (für neue Planungen)</label>
           <select class="input" id="sDay">${WEEKDAYS.map((d, i) => `<option value="${i}" ${(state.settings.trainingDay == null ? 3 : +state.settings.trainingDay) === i ? 'selected' : ''}>${d}</option>`).join('')}</select></div>
@@ -1041,6 +1082,21 @@
     const ke = t.closest('[data-kid-elig]');
     if (ke) { ui.kidElig = ke.dataset.kidElig; rerender(); return; }
 
+    const pm = t.closest('[data-pmat]');
+    if (pm) { const m = pm.dataset.pmat; if (ui.material.has(m)) ui.material.delete(m); else ui.material.add(m); rerender(); return; }
+
+    const plm = t.closest('[data-plmat]');
+    if (plm) {
+      const pl = planById(ui.openPlan); const m = plm.dataset.plmat;
+      const mat = planMaterial(pl);
+      if (mat.has(m)) mat.delete(m); else mat.add(m);
+      pl.material = [...mat];
+      const n = fixMaterial(pl);
+      rerender();
+      toast(n ? `${n} Übung(en) passend ersetzt` : 'Material gespeichert');
+      return;
+    }
+
     const op = t.closest('[data-open-plan]');
     if (op) { openPlan(op.dataset.openPlan); return; }
 
@@ -1076,6 +1132,7 @@
         if (pl && confirm(`Training am ${fmtDay(pl.day)} löschen?`)) { state.planned = state.planned.filter((p) => p.id !== pl.id); ui.openPlan = null; save(); rerender(); toast('Gelöscht'); }
         break;
       }
+      case 'fix-mat': { const pl = planById(ui.openPlan); const n = fixMaterial(pl); rerender(); toast(`${n} Übung(en) ersetzt`); break; }
       case 'attendance': openAttendance(planById(ui.openPlan), false); break;
       case 'start': startTimer(planById(ui.openPlan)); break;
       case 'finish': finishPlan(planById(ui.openPlan)); break;
