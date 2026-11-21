@@ -1,9 +1,9 @@
 /* Service Worker: macht die App offline nutzbar. Bei Änderungen VERSION erhöhen. */
-const VERSION = 'g1-trainer-v11';
+const VERSION = 'g1-trainer-v12';
 const ASSETS = [
   './', './index.html', './styles.css', './manifest.webmanifest',
   './js/app.js', './js/store.js', './js/generator.js', './js/animator.js', './js/keepawake.js', './js/dfb-info.js',
-  './data/exercises-halle.js', './data/exercises-draussen.js', './data/exercises-funino.js', './data/exercises-extra.js',
+  './data/exercises-halle.js', './data/exercises-draussen.js', './data/exercises-funino.js', './data/exercises-extra.js', './data/exercises-verteilen.js',
   './icons/icon.svg', './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png',
 ];
 self.addEventListener('install', (e) => {

@@ -5,14 +5,14 @@ Trainings-App für die Bambini (G-Jugend) nach DFB-Vorgaben – für Handy und T
 ## Funktionen
 - **Training im Voraus planen** – Halle (60′) oder draußen (90′), Datum (Standard: nächster freier Mittwoch).
   - *Allein:* freies Training & Aufbau → Begrüßung mit Ruf → 1 Station mit allen → Funino lernen → Funino 3:3 → Abschlusskreis mit Ruf.
-  - *Zu zweit:* 3 Stationen im Wechsel (Gruppen A/B/C, ausgeglichen, per Antippen verschiebbar) + Funino-Abschluss.
+  - *Zu zweit (mit Helfer):* 3 Stationen im Wechsel (Gruppen A/B/C) + Funino-Abschluss.
   - Berücksichtigt Material (streng), Leistungsstand, Favoriten, zuletzt gemachte Übungen; Funino-Lernweg in 4 Stufen.
   - Packliste mit Mengen, Aufbau-Checkliste, „Heute im Blick“, Geburtstage, „♻️ Wie letztes Mal“.
 - **Trainingsmodus (Timer)** – große Uhr, Phasenfarben, Rufe groß, Stationsrotation, lautes Signal mit Vorwarnung,
   Display bleibt an, **Stand übersteht Neuladen/App-Wechsel**, Anwesenheit & neues Kind direkt im Timer.
-- **Kinder** – Name, Jahrgang, G1/G2, spielberechtigt, Leistung in 4 Bereichen (1–5) mit **Entwicklungs-Historie**,
+- **Kinder (nur G1)** – Foto, Name, Jahrgang, spielberechtigt, Leistung in 4 Bereichen (1–5) mit **Entwicklungs-Historie**,
   datierte Notizen, Anwesenheitsquote; Schnell-Bewertung beim Abschließen eines Trainings.
-- **56 Übungen** (Halle, draußen, Funino-Lernweg, Extras) mit animierten Skizzen.
+- **65 Übungen** (Halle, draußen, Funino-Lernweg, Verteilen, Extras) mit animierten Skizzen; Schwerpunkt „Verteilen statt Haufen“ mit Coaching-Rufen.
 - **Daten** bleiben auf dem Gerät: Sicherung/Kinderliste teilen (WhatsApp, Mail), automatische Sicherung vor Import/Löschen.
 
 ## Aktivieren (GitHub Pages)
