@@ -438,3 +438,17 @@ td.st-1 { background: var(--st-1); } td.st-2 { background: var(--st-2); } td.st-
 .kid > div:last-child { flex-shrink: 0; max-width: 40%; }
 .kid .tag.unrated { white-space: normal; text-align: center; }
 html, body { overflow-x: hidden; }
+
+/* ===== Verteilen & Fotos ===== */
+.phase-pill.spread { --pc: #0f766e; }
+.calls-card { background: #fff7ed; border: 2px solid #ea580c; color: #7c2d12; border-radius: 14px; padding: 10px 14px; margin: 10px 0; }
+.calls-card .calls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.calls-card .calls span { background: #fff; border-radius: 10px; padding: 6px 10px; font-weight: 800; font-size: 1.05rem; }
+@media (prefers-color-scheme: dark) { .calls-card { background: #3a1d0a; color: #fed7aa; } .calls-card .calls span { background: #1f1307; } }
+.timer .calls-card { background: #fff7ed; color: #7c2d12; }
+.timer .calls-card .calls span { background: #fff; }
+img.avatar { object-fit: cover; background: var(--line); }
+.av-sm { width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; object-fit: cover; display: inline-flex; align-items: center; justify-content: center; font-size: .7rem; font-weight: 800; color: #fff; vertical-align: middle; }
+.chip .av-sm { width: 22px; height: 22px; flex-basis: 22px; margin: -3px 4px -3px -6px; }
+.avatar-lg { width: 72px; height: 72px; flex: 0 0 72px; font-size: 1.6rem; }
+.photo-btns { display: flex; gap: 6px; margin-top: 6px; }

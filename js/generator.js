@@ -68,6 +68,8 @@
     },
   };
 
+  const SPREAD_CALLS = ['Mach dich breit!', 'Such dir eine Lücke!', 'Nicht alle zum Ball!', 'Welches Tor ist frei?'];
+
   const FUNINO_RULES = [
     'Tore zählen nur aus der Schusszone.',
     'Ball im Aus: eindribbeln statt einwerfen.',
@@ -152,6 +154,7 @@
     if (ctx.count && ctx.count > max) s -= 1.5;
     if (ex.venue.length === 1 && ex.venue[0] === ctx.venue) s += 1; // ortstypische Übungen bevorzugen
     if (ctx.light && (ex.material || []).every((m) => LIGHT.has(m))) s += 4; // Aufwärmen ohne Aufbau
+    if (ctx.spread && ex.spread) s += 7; // Schwerpunkt „Verteilen statt Haufen“ (Vorbereitung Funino-Spielbetrieb)
     return s + Math.random() * 3;
   }
 
@@ -195,6 +198,7 @@
       focus: focus && focus !== 'auto' ? focus : weakestArea(avg),
       autoFocus: !focus || focus === 'auto',
       material: new Set(material || state.settings.material),
+      spread: state.settings.spreadFocus !== false,
       recent,
       favorites: new Set(state.favorites),
     };
@@ -294,5 +298,5 @@
     return ex;
   }
 
-  window.Generator = { TEMPLATES, SOLO_TEMPLATES, FUNINO_RULES, RITUALS, STATION_PHASES, funinoStep, generate, swap, swapStation, swapFunino, hasMaterial, avgRatings, targetLevel, weakestArea };
+  window.Generator = { SPREAD_CALLS, TEMPLATES, SOLO_TEMPLATES, FUNINO_RULES, RITUALS, STATION_PHASES, funinoStep, generate, swap, swapStation, swapFunino, hasMaterial, avgRatings, targetLevel, weakestArea };
 })();

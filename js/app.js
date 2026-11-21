@@ -69,6 +69,30 @@
     for (const c of name || '?') h = (h * 31 + c.charCodeAt(0)) >>> 0;
     return COLORS[h % COLORS.length];
   }
+  // Avatar: Foto (falls vorhanden) oder farbiger Kreis mit Initialen
+  function avatarHtml(k, cls) {
+    const ph = Store.getPhoto(k.id);
+    return ph ? `<img class="${cls || 'avatar'}" src="${ph}" alt="">`
+      : `<div class="${cls || 'avatar'}" style="background:${avatarColor(k.name)}">${esc(initials(k.name))}</div>`;
+  }
+  const avSm = (k) => avatarHtml(k, 'av-sm');
+  // Foto verkleinern und quadratisch zuschneiden (256 px, JPEG)
+  function resizePhoto(file) {
+    return new Promise((res, rej) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const S = 256, c = document.createElement('canvas'); c.width = c.height = S;
+        const m = Math.min(img.naturalWidth, img.naturalHeight);
+        c.getContext('2d').drawImage(img, (img.naturalWidth - m) / 2, (img.naturalHeight - m) / 2, m, m, 0, 0, S, S);
+        URL.revokeObjectURL(url);
+        res(c.toDataURL('image/jpeg', 0.8));
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('Das Bild konnte nicht gelesen werden.')); };
+      img.src = url;
+    });
+  }
+
   function initials(name) {
     return (name || '?').trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase();
   }
@@ -224,7 +248,7 @@
   const seasonG1Year = () => { const n = new Date(); return (n.getMonth() >= 6 ? n.getFullYear() : n.getFullYear() - 1) - 6; };
   const g1Year = () => +(state.settings.g1Year || seasonG1Year());
   const teamOf = (k) => k.team || (yearOf(k) && yearOf(k) > g1Year() ? 'G2' : 'G1');
-  const planKids = (plan) => activeKids().filter((k) => teamOf(k) === 'G1' || (plan && plan.withG2));
+  const planKids = () => activeKids(); // nur noch G1
   const expectedIds = (plan) => planKids(plan).map((k) => k.id);
   const planCount = (plan) => (plan.attendees ? plan.attendees.length : (expectedIds(plan).length || plan.count || 0));
 
@@ -280,7 +304,7 @@
         <div class="date-badge">${d.getDate()}<small>${d.toLocaleDateString('de-DE', { month: 'short' })}</small></div>
         <div style="flex:1;min-width:0">
           <div class="row" style="gap:6px"><b>${fmtDay(p.day)}</b><span class="small muted">· ${relDay(p.day)}</span></div>
-          <div class="row" style="gap:6px;margin-top:2px"><span class="tag ${p.venue}">${VENUES[p.venue]} · ${planMinutes(p)}′</span><span class="tag team-G1">G1${p.withG2 ? '+G2' : ''}</span>${att}</div>
+          <div class="row" style="gap:6px;margin-top:2px"><span class="tag ${p.venue}">${VENUES[p.venue]} · ${planMinutes(p)}′</span>${att}</div>
           <div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:4px">${esc(names.join(' · '))}</div>
           ${past ? '<div class="small" style="color:var(--warn)">⚠️ Noch nicht abgeschlossen</div>' : ''}
         </div>
@@ -314,7 +338,7 @@
   }
 
   function renderNewPlan() {
-    const kids = planKids({ withG2: ui.withG2 });
+    const kids = planKids();
     const tplH = Generator.TEMPLATES.halle, tplD = Generator.TEMPLATES.draussen;
     const avg = Generator.avgRatings(kids);
     const weakLabel = AREAS.find((a) => a.key === Generator.weakestArea(avg)).label;
@@ -344,6 +368,10 @@
           <button class="btn btn-sm" data-fstep="-1" aria-label="Schritt zurück">◀</button><button class="btn btn-sm" data-fstep="1" aria-label="Schritt vor">▶</button></div>
       </div>
       <div class="card">
+        <label class="row" style="cursor:pointer"><input type="checkbox" id="sSpread" ${state.settings.spreadFocus !== false ? 'checked' : ''} style="width:24px;height:24px;accent-color:var(--primary-2)">
+          <span><b>↔️ Verteilen statt Haufen</b><br><span class="small muted">Vorbereitung auf Funino im Spielbetrieb: bevorzugt Übungen, bei denen die Kinder lernen, sich zu verteilen.</span></span></label>
+      </div>
+      <div class="card">
         <h3>Schwerpunkt</h3>
         <div class="chips">
           <button class="chip ${ui.focus === 'auto' ? 'on' : ''}" data-focus="auto">✨ Automatisch${kids.length ? ` (${esc(weakLabel)})` : ''}</button>
@@ -356,10 +384,6 @@
         <p class="small muted">Es werden nur Übungen vorgeschlagen, für die alles hier Ausgewählte reicht. Vorauswahl änderst du unter „Mehr“.</p>
         ${materialChips(ui.material, 'data-pmat')}
         ${['baelle', 'huetchen'].filter((m) => !ui.material.has(m)).map((m) => `<p class="small" style="color:var(--warn);margin-top:8px">⚠️ Ohne ${MAT[m]} gibt es kaum passende Übungen.</p>`).join('')}
-      </div>
-      <div class="card">
-        <label class="row" style="cursor:pointer"><input type="checkbox" id="pG2" ${ui.withG2 ? 'checked' : ''} style="width:24px;height:24px;accent-color:var(--primary-2)">
-          <span><b>Ich trainiere auch die G2</b><br><span class="small muted">Sonst wird nur für die G1 geplant.</span></span></label>
       </div>
       <div class="card">
         <h3>👥 Kinder</h3>
@@ -470,7 +494,7 @@
       <tr><th></th><th>Runde 1</th><th>Runde 2</th><th>Runde 3</th></tr>
       ${GROUPS.map((G, g) => `<tr><th><span class="grp grp-${G.key}">${G.key}</span></th>${[1, 2, 3].map((r) => { const si = stationOf(g, r); return `<td class="st-c st-${si + 1}">${ST_NUM[si]}</td>`; }).join('')}</tr>`).join('')}
     </table>
-    <div class="grp-list">${GROUPS.map((G, g) => `<div><span class="grp grp-${G.key} sm">${G.key}</span> ${groups[g].length ? groups[g].map((k) => `<button class="chip chip-sm" data-move-kid="${k.id}">${esc(k.name.split(' ')[0])}</button>`).join(' ') : '<span class="muted small">–</span>'}</div>`).join('')}</div>
+    <div class="grp-list">${GROUPS.map((G, g) => `<div><span class="grp grp-${G.key} sm">${G.key}</span> ${groups[g].length ? groups[g].map((k) => `<button class="chip chip-sm" data-move-kid="${k.id}">${avSm(k)}${esc(k.name.split(' ')[0])}</button>`).join(' ') : '<span class="muted small">–</span>'}</div>`).join('')}</div>
     <div class="row small muted" style="margin-top:6px"><span style="flex:1">Kind antippen = in nächste Gruppe schieben.</span>${plan.groupOverride ? '<button class="btn btn-sm" data-act="groups-reset">🔀 Automatisch</button>' : ''}</div>
     <p class="small muted" style="margin:6px 0 0">Gruppen nach Jahrgang & Leistungsstand (DFB: Teams nach Entwicklungsstand). ${plan.attendees ? '' : 'Vorläufig – nach dem Abhaken der Anwesenheit aktualisiert.'}</p>`;
   }
@@ -492,7 +516,7 @@
     const miss = missingFor(ex, mat);
     return `<article class="station ${cls}">
       <div class="st-num">${num}</div>
-      <div class="st-body">${pill}
+      <div class="st-body">${pill} ${spreadPill(ex)}
         <h3 class="st-name">${esc(ex.name)}</h3>
         <p class="st-short">${esc(exShort(ex))}</p>
         ${matIcons(ex, true)}
@@ -507,6 +531,13 @@
     </article>`;
   }
 
+  function coachCalls(ex) {
+    const calls = (ex && ex.calls) || (state.settings.spreadFocus !== false && ex && ex.funino ? Generator.SPREAD_CALLS : null);
+    if (!calls) return '';
+    return `<div class="calls-card"><b>📣 Reinrufen</b><div class="calls">${calls.map((c) => `<span>„${esc(c)}“</span>`).join('')}</div></div>`;
+  }
+  const spreadPill = (ex) => (ex && ex.spread ? '<span class="phase-pill spread">↔️ Verteilen</span>' : '');
+
   function funinoRules() {
     return `<div class="rules-card"><b>🥅 Funino-Regeln</b><ul>${Generator.FUNINO_RULES.map((r) => `<li>${esc(r)}</li>`).join('')}</ul></div>`;
   }
@@ -518,7 +549,7 @@
     const miss = missingFor(ex, planMaterial(plan));
     return `<article class="station st-funino">
       <div class="st-num">🥅</div>
-      <div class="st-body"><span class="phase-pill funino">${label}</span>
+      <div class="st-body"><span class="phase-pill funino">${label}</span> ${spreadPill(ex)}
         <h3 class="st-name">${esc(ex.name)}</h3>
         <p class="st-short">${esc(exShort(ex))}</p>
         ${matIcons(ex, true)}
@@ -597,7 +628,6 @@
       <h1 style="margin-bottom:4px">${fmtDay(plan.day, true)}</h1>
       <div class="plan-head" style="margin-bottom:12px">
         <span class="tag ${plan.venue}">${VENUES[plan.venue]} · ${planMinutes(plan)}′</span>
-        <span class="tag team-G1">G1${plan.withG2 ? ' + G2' : ''}</span>
         <span class="tag">${solo ? '🧍 allein' : '🧍🧍 zu zweit'}</span>
         <span class="tag">👥 ${planCount(plan)}</span>
         <span class="tag">🎯 ${esc(focusLabel)}</span>
@@ -665,7 +695,6 @@
         </div>
         <div class="row" style="margin-top:12px"><span class="small" style="flex:1">${solo ? '🧍 Du trainierst allein: 1 Station + Funino.' : '🧍🧍 Ihr seid zu zweit: 3 Stationen + Funino.'}</span>
           <button class="btn btn-sm" data-act="switch-mode">${solo ? 'Wir sind zu zweit' : 'Ich bin allein'}</button></div>
-        <label class="row" style="margin-top:12px;cursor:pointer"><input type="checkbox" id="planG2" ${plan.withG2 ? 'checked' : ''} style="width:22px;height:22px;accent-color:var(--primary-2)"> <span>Ich trainiere heute auch die <b>G2</b></span></label>
       </div>
       <details class="card">
         <summary style="font-weight:700;cursor:pointer">🧺 Verfügbares Material (${mat.size}/${Store.MATERIAL.length})</summary>
@@ -797,19 +826,17 @@
     ui.venue = defaultVenueFor(ui.newDay);
     ui.focus = 'auto';
     ui.material = new Set(state.settings.material);
-    ui.withG2 = false;
     ui.mode = state.settings.lastMode || 'solo';
     ui.funinoStep = null;
     rerender(); window.scrollTo(0, 0);
   }
 
   function generatePlan() {
-    const expected = expectedIds({ withG2: ui.withG2 });
+    const expected = expectedIds();
     const plan = Generator.generate({ venue: ui.venue, attendees: expected, focus: ui.focus, state, count: expected.length || ui.guestCount, material: [...(ui.material || state.settings.material)], mode: ui.mode, funinoStep: ui.funinoStep });
     state.settings.lastMode = ui.mode;
     plan.day = ui.newDay || nextFreeDay();
     plan.attendees = null; // wird am Trainingstag abgehakt
-    plan.withG2 = !!ui.withG2;
     plan.count = expected.length || ui.guestCount;
     state.planned.push(plan);
     save();
@@ -866,7 +893,7 @@
     const noYear = kids.filter((k) => !yearOf(k));
     if (noYear.length) groups.push(['Ohne Jahrgang', noYear]);
     const item = (k) => `<label class="${set.has(k.id) ? '' : 'off'}"><input type="checkbox" data-a="${k.id}" ${set.has(k.id) ? 'checked' : ''}>
-      <span>${esc(k.name)}${isEligible(k) ? '' : ' <span class="tag ns">n. s.</span>'}</span></label>`;
+      ${avSm(k)}<span>${esc(k.name)}${isEligible(k) ? '' : ' <span class="tag ns">n. s.</span>'}</span></label>`;
     openModal(`
       <h2>Anwesenheit</h2>
       <p class="muted">${fmtDay(plan.day, true)}</p>
@@ -917,9 +944,7 @@
         if (!name) { alert('Bitte einen Namen eingeben.'); return; }
         if (!year) { alert('Bitte den Jahrgang wählen.'); return; }
         if (newElig === null) { alert('Bitte auswählen, ob das Kind spielberechtigt ist.'); return; }
-        const kid = Store.normKid({ id: Store.uid(), name, year, eligible: newElig, active: true });
-        // Kind soll in diesem Training erscheinen, auch wenn es vom Jahrgang her G2 wäre
-        if (teamOf(kid) === 'G2' && !plan.withG2) kid.team = 'G1';
+        const kid = Store.normKid({ id: Store.uid(), name, year, eligible: newElig, active: true, createdAt: new Date().toISOString() });
         state.kids.push(kid);
         set.add(kid.id); plan.attendees = [...set]; save();
         toast(`${kid.name} angelegt und abgehakt`);
@@ -953,7 +978,7 @@
       ${kids.length ? `<details ${unrated.length ? 'open' : ''} class="card" style="padding:12px">
         <summary style="font-weight:700;cursor:pointer">⭐ Kinder kurz bewerten <span class="small muted">(optional${unrated.length ? `, ${unrated.length} noch nie bewertet` : ''})</span></summary>
         <p class="small muted">Nur antippen, wo dir heute etwas aufgefallen ist. Wird sofort gespeichert und als Entwicklung festgehalten.</p>
-        ${kids.map((k) => `<div class="rate-card"><div class="row"><b style="flex:1">${esc(k.name)}</b>${!k.ratings ? '<span class="tag unrated">neu</span>' : ''}</div>
+        ${kids.map((k) => `<div class="rate-card"><div class="row">${avSm(k)}<b style="flex:1">${esc(k.name)}</b>${!k.ratings ? '<span class="tag unrated">neu</span>' : ''}</div>
           ${AREAS.map((a) => `<div class="rate-row"><span>${a.icon} ${a.label}</span>${rateDots(k, a.key)}</div>`).join('')}
           <input class="input input-sm" data-knote="${k.id}" placeholder="Notiz zu ${esc(k.name.split(' ')[0])} (optional)"></div>`).join('')}
       </details>` : ''}
@@ -996,7 +1021,7 @@
 
   // Anwesenheit relativ zu den Trainings, für die das Kind erwartet war
   function kidStats(k) {
-    const exp = state.sessions.filter((s) => teamOf(k) === 'G1' || s.withG2)
+    const exp = state.sessions.filter((s) => !k.createdAt || (s.day || s.date || '') >= k.createdAt.slice(0, 10))
       .sort((a, b) => (a.day || a.date).localeCompare(b.day || b.date));
     const present = exp.filter((s) => (s.attendees || []).includes(k.id));
     let streak = 0;
@@ -1038,7 +1063,7 @@
   function renderKinder() {
     const allKids = activeKids();
     const byElig = (k) => ui.kidElig === 'alle' || (ui.kidElig === 'unrated' ? !k.ratings : (ui.kidElig === 'ja') === (k.eligible !== false));
-    const kids = allKids.filter((k) => (ui.kidTeam === 'alle' || teamOf(k) === ui.kidTeam) && byElig(k));
+    const kids = allKids.filter(byElig);
     const nElig = allKids.filter((k) => k.eligible !== false).length;
     const nUnrated = allKids.filter((k) => !k.ratings).length;
     const inactive = state.kids.filter((k) => k.active === false);
@@ -1046,7 +1071,7 @@
     const avg = Generator.avgRatings(rated);
     const overview = rated.length ? `
       <details class="card">
-        <summary class="card-head" style="cursor:pointer;margin:0"><h3 style="margin:0">📊 ${ui.kidTeam === 'alle' ? 'G1 + G2' : ui.kidTeam} im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></summary>
+        <summary class="card-head" style="cursor:pointer;margin:0"><h3 style="margin:0">📊 Mannschaft im Schnitt</h3><span class="tag">📶 ${LEVEL[Generator.targetLevel(avg)]}</span></summary>
         ${AREAS.map((a) => `<div class="area-row"><span>${a.icon} ${a.label}</span><div class="bar"><i style="width:${(avg[a.key] / 5) * 100}%"></i></div><b>${avg[a.key].toFixed(1)}</b></div>`).join('')}
         <p class="small muted" style="margin:8px 0 0">Größtes Potenzial: <b>${AREAS.find((a) => a.key === Generator.weakestArea(avg)).label}</b> (aus ${rated.length} bewerteten Kindern) – darauf legt der automatische Vorschlag den Schwerpunkt.</p>
       </details>` : '';
@@ -1055,12 +1080,8 @@
     const noYear = kids.filter((k) => !yearOf(k));
     if (noYear.length) groups.push([groups.length ? 'Ohne Jahrgang' : '', noYear]);
     const list = groups.map(([title, ks]) => `${title ? `<h3 style="margin:18px 0 10px">${title} <span class="muted" style="font-weight:500">(${ks.length})</span></h3>` : ''}<div class="grid grid-2">${ks.map((k) => kidRow(k)).join('')}</div>`).join('');
-    const chips = allKids.length ? `<div class="chips chip-scroll" style="margin-bottom:8px">
-        <button class="chip ${ui.kidTeam === 'alle' ? 'on' : ''}" data-kid-team="alle">G1 + G2 (${allKids.length})</button>
-        <button class="chip ${ui.kidTeam === 'G1' ? 'on' : ''}" data-kid-team="G1">G1 (${allKids.filter((k) => teamOf(k) === 'G1').length})</button>
-        <button class="chip ${ui.kidTeam === 'G2' ? 'on' : ''}" data-kid-team="G2">G2 (${allKids.filter((k) => teamOf(k) === 'G2').length})</button></div>
-      <div class="chips chip-scroll" style="margin-bottom:12px">
-        <button class="chip ${ui.kidElig === 'alle' ? 'on' : ''}" data-kid-elig="alle">Alle</button>
+    const chips = allKids.length ? `<div class="chips chip-scroll" style="margin-bottom:12px">
+        <button class="chip ${ui.kidElig === 'alle' ? 'on' : ''}" data-kid-elig="alle">Alle (${allKids.length})</button>
         <button class="chip ${ui.kidElig === 'ja' ? 'on' : ''}" data-kid-elig="ja">✅ Spielberechtigt (${nElig})</button>
         <button class="chip ${ui.kidElig === 'nein' ? 'on' : ''}" data-kid-elig="nein">⛔ Nicht (${allKids.length - nElig})</button>
         ${nUnrated ? `<button class="chip ${ui.kidElig === 'unrated' ? 'on' : ''}" data-kid-elig="unrated">⭐ Nicht bewertet (${nUnrated})</button>` : ''}</div>` : '';
@@ -1079,10 +1100,10 @@
   function kidRow(k) {
     const st = kidStats(k);
     return `<div class="kid" data-kid="${k.id}" style="${k.active === false ? 'opacity:.6' : ''}">
-      <div class="avatar" style="background:${avatarColor(k.name)}">${esc(initials(k.name))}</div>
+      ${avatarHtml(k)}
       <div class="kid-main">
         <div class="kid-name">${esc(k.name)}</div>
-        <div class="row" style="gap:4px;margin-top:2px"><span class="tag team-${teamOf(k)}">${teamOf(k)}</span><span class="small muted">${[ageOf(k) ? ageOf(k) + ' J.' : '', yearOf(k) ? 'Jg. ' + yearOf(k) : ''].filter(Boolean).join(' · ')}</span>${k.eligible === false ? '<span class="tag ns">n. s.</span>' : ''}</div>
+        <div class="row" style="gap:4px;margin-top:2px"><span class="small muted">${[ageOf(k) ? ageOf(k) + ' J.' : '', yearOf(k) ? 'Jg. ' + yearOf(k) : ''].filter(Boolean).join(' · ')}</span>${k.eligible === false ? '<span class="tag ns">n. s.</span>' : ''}</div>
         ${k.ratings ? `<div class="kid-areas">${AREAS.map((a) => `<span>${a.icon} ${k.ratings[a.key] || '–'}</span>`).join('')}</div>` : ''}
       </div>
       <div style="text-align:right">${starsRO(kidAvg(k))}
@@ -1110,9 +1131,10 @@
     const notes = (k.notes || []).slice().reverse();
     openModal(`
       <div class="row" style="gap:12px;margin-bottom:8px;padding-right:40px">
-        <div class="avatar" style="background:${avatarColor(k.name)}">${esc(initials(k.name))}</div>
+        <div style="text-align:center">${avatarHtml(k, 'avatar avatar-lg')}
+          <div class="photo-btns"><label class="btn btn-sm">📷<input type="file" id="kPhoto" accept="image/*" hidden></label>${Store.getPhoto(k.id) ? '<button class="btn btn-sm" id="kPhotoDel" aria-label="Foto entfernen">🗑</button>' : ''}</div></div>
         <div style="flex:1;min-width:0"><h2 style="margin:0">${esc(k.name)}</h2>
-          <div class="row" style="gap:4px;margin-top:4px"><span class="tag team-${teamOf(k)}">${teamOf(k)}</span><span class="small muted">${[ageOf(k) ? ageOf(k) + ' Jahre' : '', yearOf(k) ? 'Jg. ' + yearOf(k) : ''].filter(Boolean).join(' · ')}</span>
+          <div class="row" style="gap:4px;margin-top:4px"><span class="small muted">${[ageOf(k) ? ageOf(k) + ' Jahre' : '', yearOf(k) ? 'Jg. ' + yearOf(k) : ''].filter(Boolean).join(' · ')}</span>
           ${k.eligible === false ? '<span class="tag ns">nicht spielberechtigt</span>' : '<span class="tag">✅ spielberechtigt</span>'}</div></div>
       </div>
       <div class="facts"><span>👥 ${st.expected ? `${st.present} von ${st.expected} Trainings (${st.quote} %)` : 'noch kein Training'}</span>${st.last ? `<span>zuletzt ${fmtDate(st.last + 'T12:00:00', { day: '2-digit', month: '2-digit' })}</span>` : ''}${st.streak >= 2 ? `<span style="color:var(--warn)">${st.streak}× in Folge gefehlt</span>` : ''}</div>
@@ -1137,6 +1159,15 @@
       root.querySelector('#kAddNote').addEventListener('click', add);
       root.querySelector('#kNewNote').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
       root.querySelector('#kEdit').addEventListener('click', () => openKidForm(k.id));
+      root.querySelector('#kPhoto').addEventListener('change', async (e) => {
+        const f = e.target.files && e.target.files[0]; if (!f) return;
+        try {
+          const url = await resizePhoto(f);
+          if (Store.setPhoto(k.id, url)) { toast('Foto gespeichert'); rerender(); openKid(k.id); }
+        } catch (err) { alert(err.message); }
+      });
+      const pd = root.querySelector('#kPhotoDel');
+      if (pd) pd.addEventListener('click', () => { if (confirm('Foto entfernen?')) { Store.setPhoto(k.id, null); rerender(); openKid(k.id); } });
     });
   }
 
@@ -1159,12 +1190,6 @@
             <button type="button" data-elig="1" class="${k.eligible === true || (!isNew && k.eligible !== false) ? 'on' : ''}">✅ Ja</button>
             <button type="button" data-elig="0" class="${k.eligible === false ? 'on' : ''}">⛔ Nein</button>
           </div></div>
-        <div class="field"><label>Mannschaft</label>
-          <div class="seg" id="kTeam">
-            <button type="button" data-team="" class="${!k.team ? 'on' : ''}">Auto (Jahrgang)</button>
-            <button type="button" data-team="G1" class="${k.team === 'G1' ? 'on' : ''}">G1</button>
-            <button type="button" data-team="G2" class="${k.team === 'G2' ? 'on' : ''}">G2</button>
-          </div><span class="small muted">Auto: Jahrgang ${g1Year()} und älter = G1, jünger = G2.</span></div>
         <div class="field"><label for="kBirth">Geburtsdatum (optional)</label><input class="input" id="kBirth" type="date" value="${esc(k.birthdate || '')}" max="${todayIso()}">
           <span class="small muted" id="kAgeInfo"></span></div>
         <div class="field"><label for="kNote">Allgemeine Notiz</label><textarea class="input" id="kNote" placeholder="z. B. Allergie, Abholung durch Oma …">${esc(k.note)}</textarea></div>
@@ -1177,12 +1202,6 @@
       </form>`, (root) => {
       const birth = root.querySelector('#kBirth'), info = root.querySelector('#kAgeInfo'), yearSel = root.querySelector('#kYear');
       let elig = k.eligible === true || (!isNew && k.eligible !== false) ? true : (k.eligible === false ? false : null);
-      let team = k.team || '';
-      root.querySelector('#kTeam').addEventListener('click', (e) => {
-        const b = e.target.closest('[data-team]'); if (!b) return;
-        team = b.dataset.team;
-        root.querySelectorAll('#kTeam button').forEach((x) => x.classList.toggle('on', x === b));
-      });
       root.querySelector('#kElig').addEventListener('click', (e) => {
         const b = e.target.closest('[data-elig]'); if (!b) return;
         elig = b.dataset.elig === '1';
@@ -1202,6 +1221,7 @@
       if (del) del.addEventListener('click', () => {
         if (!confirm(`${k.name} wirklich löschen? (Tipp: „aktiv“ abwählen behält den Verlauf.)`)) return;
         state.kids = state.kids.filter((x) => x.id !== k.id);
+        Store.setPhoto(k.id, null);
         save(); closeModal(); rerender(); toast('Gelöscht');
       });
       root.querySelector('#kidForm').addEventListener('submit', (e) => {
@@ -1213,12 +1233,11 @@
         k.birthdate = birth.value || '';
         k.year = +yearSel.value;
         k.eligible = elig;
-        if (team) k.team = team; else delete k.team;
         k.note = root.querySelector('#kNote').value.trim();
         const act = root.querySelector('#kActive');
         if (act) k.active = act.checked;
         const old = kidById(k.id);
-        if (old) Object.assign(old, k); else state.kids.push(Store.normKid(k));
+        if (old) Object.assign(old, k); else state.kids.push(Store.normKid(Object.assign(k, { createdAt: new Date().toISOString() })));
         save(); rerender(); toast(isNew ? `${k.name} hinzugefügt` : 'Gespeichert');
         openKid(old ? old.id : state.kids[state.kids.length - 1].id);
       });
@@ -1428,12 +1447,6 @@
           <span class="small muted">Tipp: Jede Zeile wird im Timer groß als eigene Zeile angezeigt.</span></div>
       </div>
       <div class="card">
-        <h3>G1 / G2</h3>
-        <div class="field" style="margin:0;max-width:300px"><label for="sG1Year">G1 = Jahrgang … und älter</label>
-          <select class="input" id="sG1Year">${Array.from({ length: 8 }, (_, i) => new Date().getFullYear() - 3 - i).map((y) => `<option value="${y}" ${g1Year() === y ? 'selected' : ''}>${y}</option>`).join('')}</select>
-          <span class="small muted">Jüngere Kinder = G2. Einzelne Kinder kannst du in ihrem Profil umstellen.</span></div>
-      </div>
-      <div class="card">
         <h3>Standard-Material</h3>
         <p class="small muted">Vorauswahl beim Planen. Pro Training kannst du das Material beim Planen noch anpassen.</p>
         <div class="chips">${Store.MATERIAL.map((m) => `<button class="chip ${st.material.includes(m.key) ? 'on' : ''}" data-mat="${m.key}">${m.label}</button>`).join('')}</div>
@@ -1641,6 +1654,7 @@
       title = ex ? ex.name : b.label;
       core = ex ? `<p class="ex-short-big">${esc(exShort(ex))}</p>
           ${b.type === 'final' ? '<p class="timer-note">Auf dem Feld von Station ③ – alle zusammen.</p>' : ''}
+          ${coachCalls(ex)}
           ${isFun && ex && ex.funino ? funinoRules() : ''}
           <ul class="timer-steps">${list((ex.steps || []).slice(0, 3))}</ul>
           <div class="timer-thumb">${animBox(ex, true)}</div>`
@@ -1799,7 +1813,7 @@
     if (ky) { ui.kidYear = ky.dataset.kidYear; rerender(); return; }
 
     const kt = t.closest('[data-kid-team]');
-    if (kt) { ui.kidTeam = kt.dataset.kidTeam; rerender(); return; }
+    if (kt) { rerender(); return; }
 
     const fs = t.closest('[data-fstep]');
     if (fs) { ui.funinoStep = Math.min(4, Math.max(1, (ui.funinoStep || Generator.funinoStep(state)) + +fs.dataset.fstep)); rerender(); return; }
@@ -1927,15 +1941,9 @@
       if (pl) { pl.setupDone = pl.setupDone || {}; pl.setupDone[t.dataset.setup] = t.checked; save(); rerender(); }
       return;
     }
-    if (t.id === 'pG2') { ui.withG2 = t.checked; rerender(); return; }
-    if (t.id === 'planG2') {
-      const pl = planById(ui.openPlan);
-      if (pl) { pl.withG2 = t.checked; if (pl.attendees) pl.attendees = pl.attendees.filter((id) => expectedIds(pl).includes(id)); save(); rerender(); toast(t.checked ? 'G2 trainiert mit' : 'Nur G1'); }
-      return;
-    }
+    if (t.id === 'sSpread') { state.settings.spreadFocus = t.checked; save(); toast(t.checked ? 'Schwerpunkt Verteilen an' : 'Schwerpunkt Verteilen aus'); return; }
     if (t.id === 'sChantStart') { state.settings.chantStart = t.value.trim(); save(); toast('Gespeichert'); return; }
     if (t.id === 'sChantEnd') { state.settings.chantEnd = t.value.trim(); save(); toast('Gespeichert'); return; }
-    if (t.id === 'sG1Year') { state.settings.g1Year = +t.value; save(); toast('Gespeichert'); return; }
     if (t.id === 'pDay') {
       if (t.value) { ui.newDay = t.value; ui.venue = defaultVenueFor(t.value); }
       rerender(); return;
@@ -1958,7 +1966,7 @@
           if (Store.isKidsFile(data)) {
             if (!confirm(`Kinderliste mit ${data.kids.length} Kindern importieren? Neue Kinder werden hinzugefügt, vorhandene (gleicher Name) aktualisiert.`)) return;
             const r = Store.importJSON(reader.result);
-            alert(`Fertig: ${r.added} Kinder hinzugefügt, ${r.updated} aktualisiert.${r.noElig && r.noElig.length ? `\n\nBei ${r.noElig.length} Kindern stand keine Spielberechtigung in der Datei – sie wurden als „spielberechtigt“ übernommen. Bitte kurz prüfen.` : ''}`);
+            alert(`Fertig: ${r.added} Kinder hinzugefügt, ${r.updated} aktualisiert.${r.skipped ? `\n${r.skipped} jüngere Kinder (G2) wurden übersprungen – die App ist nur für die G1.` : ''}${r.noElig && r.noElig.length ? `\n\nBei ${r.noElig.length} Kindern stand keine Spielberechtigung in der Datei – sie wurden als „spielberechtigt“ übernommen. Bitte kurz prüfen.` : ''}`);
             location.hash = '#kinder'; route();
             return;
           }
@@ -1980,6 +1988,18 @@
   });
 
   /* ---------- Start ---------- */
+  // Einmalige Umstellung: App nur noch für die G1 – G2-Kinder entfernen (vorher Sicherung)
+  if (!state.settings.g2Removed) {
+    const g2 = state.kids.filter((k) => teamOf(k) === 'G2');
+    if (g2.length) Store.backup();
+    const ids = new Set(g2.map((k) => k.id));
+    state.kids = state.kids.filter((k) => !ids.has(k.id));
+    state.kids.forEach((k) => delete k.team);
+    state.planned.forEach((p) => { delete p.withG2; if (p.attendees) p.attendees = p.attendees.filter((id) => !ids.has(id)); p.groupOverride = null; });
+    state.settings.g2Removed = true;
+    save();
+    if (g2.length) setTimeout(() => toast(`Nur noch G1: ${g2.length} G2-Kinder entfernt (Sicherung unter „Mehr“)`), 600);
+  }
   let saveWarned = 0;
   Store.onSaveError = () => { if (Date.now() - saveWarned > 10000) { saveWarned = Date.now(); toast('⚠️ Speichern fehlgeschlagen – Speicher voll? Bitte unter „Mehr“ sichern.'); } };
   if (Store.loadProblem) setTimeout(() => alert(Store.loadProblem), 300);

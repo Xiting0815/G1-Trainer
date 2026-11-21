@@ -74,10 +74,12 @@
       active: k.active !== false,
       eligible: k.eligible === false ? false : (k.eligible === true ? true : null),
       updatedAt: isoOrNull(k.updatedAt),
+      createdAt: isoOrNull(k.createdAt),
       history: Array.isArray(k.history) ? k.history.map((h) => h && ({ date: isoOrNull(h.date), ratings: normRatings(h.ratings) })).filter((h) => h && h.date && h.ratings).slice(-200) : [],
       notes: Array.isArray(k.notes) ? k.notes.map((n) => n && ({ date: isoOrNull(n.date), text: str(n.text, 500) })).filter((n) => n && n.date && n.text).slice(-200) : [],
     };
     if (k.team === 'G1' || k.team === 'G2') kid.team = k.team;
+    if (!kid.createdAt) delete kid.createdAt;
     if (!kid.year && kid.birthdate) kid.year = +kid.birthdate.slice(0, 4);
     if (kid.eligible === null) kid.eligible = true;
     return kid;
@@ -148,6 +150,8 @@
       chantEnd: s.chantEnd != null ? str(s.chantEnd, 400) : undefined,
       lastMode: s.lastMode === 'team' ? 'team' : (s.lastMode === 'solo' ? 'solo' : undefined),
       lastExport: isoOrNull(s.lastExport),
+      g2Removed: !!s.g2Removed || undefined,
+      spreadFocus: s.spreadFocus !== false,
     };
     Object.keys(st.settings).forEach((k) => st.settings[k] === undefined && delete st.settings[k]);
     if (!st.settings.g1Year) delete st.settings.g1Year;
@@ -169,6 +173,28 @@
       if (k.ratings && !k.updatedAt && !k.history.length && AREA_KEYS.every((a) => k.ratings[a] === 3)) k.ratings = null;
     });
     return st;
+  }
+
+  /* ---------- Fotos (separat gespeichert, nur auf diesem Gerät) ---------- */
+  const PHOTOS = KEY + '.photos';
+  const PHOTO_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+  let photos = null;
+  function loadPhotos() {
+    if (photos) return photos;
+    try { photos = JSON.parse(localStorage.getItem(PHOTOS) || '{}') || {}; } catch (e) { photos = {}; }
+    return photos;
+  }
+  function getPhoto(id) { const v = loadPhotos()[id]; return typeof v === 'string' && v.length < 400000 && PHOTO_RE.test(v) ? v : null; }
+  function setPhoto(id, url) {
+    loadPhotos();
+    if (url && PHOTO_RE.test(url)) photos[id] = url; else delete photos[id];
+    try { localStorage.setItem(PHOTOS, JSON.stringify(photos)); return true; } catch (e) { if (api.onSaveError) api.onSaveError(e); return false; }
+  }
+  function importPhotos(obj) {
+    if (!obj || typeof obj !== 'object') return;
+    loadPhotos();
+    Object.entries(obj).forEach(([id, url]) => { if (/^[A-Za-z0-9_-]{1,64}$/.test(id) && typeof url === 'string' && url.length < 400000 && PHOTO_RE.test(url)) photos[id] = url; });
+    try { localStorage.setItem(PHOTOS, JSON.stringify(photos)); } catch (e) { /* */ }
   }
 
   /* ---------- Laden / Speichern ---------- */
@@ -226,7 +252,9 @@
   function exportJSON() {
     state.settings.lastExport = new Date().toISOString();
     save();
-    return JSON.stringify(Object.assign({ type: 'g1-backup', exportedAt: new Date().toISOString() }, state), null, 2);
+    const ids = new Set(state.kids.map((k) => k.id));
+    const ph = Object.fromEntries(Object.entries(loadPhotos()).filter(([id]) => ids.has(id)));
+    return JSON.stringify(Object.assign({ type: 'g1-backup', exportedAt: new Date().toISOString() }, state, { photos: ph }), null, 2);
   }
 
   /* ---------- Kinderliste teilen ---------- */
@@ -238,7 +266,7 @@
     return JSON.stringify({
       type: KIDS_TYPE, version: 2, exportedAt: new Date().toISOString(),
       kids: state.kids.map((k) => ({
-        name: k.name, birthdate: k.birthdate || '', year: k.year || null, team: k.team || null, eligible: k.eligible !== false,
+        name: k.name, birthdate: k.birthdate || '', year: k.year || null, team: 'G1', eligible: k.eligible !== false,
         ratings: k.ratings, note: k.note || '', active: k.active !== false, updatedAt: k.updatedAt || null, history: k.history || [], notes: k.notes || [],
       })),
     }, null, 2);
@@ -249,18 +277,24 @@
   }
 
   // Ergänzt neue Kinder, aktualisiert vorhandene – bei Bewertungen gewinnt der neuere Stand.
+  // G1-Jahrgang der laufenden Saison (Saisonbeginn Juli): 2026/27 → 2020
+  const seasonG1Year = () => { const n = new Date(); return (n.getMonth() >= 6 ? n.getFullYear() : n.getFullYear() - 1) - 6; };
   function mergeKids(data) {
     const norm = (n) => String(n || '').trim().toLowerCase().replace(/\s+/g, ' ');
-    let added = 0, updated = 0;
+    let added = 0, updated = 0, skipped = 0;
     const noElig = [];
+    const g1 = (state.settings && state.settings.g1Year) || seasonG1Year();
     data.kids.forEach((raw) => {
       const src = normKid(raw);
       if (!src) return;
+      if (src.team === 'G2' || (src.team !== 'G1' && src.year && src.year > g1)) { skipped++; return; }
+      delete src.team;
       if (raw.eligible === undefined) noElig.push(src.name);
       const ex = state.kids.find((k) => norm(k.name) === norm(src.name));
+      // 3er-Platzhalter ohne Datum = nicht bewertet (nie echte Bewertungen überschreiben)
+      if (src.ratings && !src.updatedAt && !src.history.length && AREA_KEYS.every((k) => src.ratings[k] === 3)) src.ratings = null;
       if (!ex) {
         src.id = uid();
-        if (src.ratings && !src.updatedAt && !src.history.length && AREA_KEYS.every((k) => src.ratings[k] === 3)) src.ratings = null;
         state.kids.push(src);
         added++;
         return;
@@ -282,7 +316,7 @@
       updated++;
     });
     save();
-    return { added, updated, noElig };
+    return { added, updated, skipped, noElig };
   }
 
   function importJSON(text) {
@@ -294,6 +328,7 @@
     backup();
     state = normState(data);
     save();
+    importPhotos(data.photos);
     return state;
   }
 
@@ -326,7 +361,7 @@
   Object.assign(api, {
     KEY, AREAS, AREA_KEYS, MATERIAL,
     load, save, uid, exportJSON, exportKidsJSON, importJSON, isKidsFile, reset,
-    backup, hasBackup, backupInfo, restoreBackup, setRatings, normKid, requestPersist,
+    backup, hasBackup, backupInfo, restoreBackup, setRatings, normKid, requestPersist, getPhoto, setPhoto,
   });
   Object.defineProperty(api, 'state', { get: () => state });
   Object.defineProperty(api, 'loadProblem', { get: () => loadProblem });
